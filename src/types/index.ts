@@ -169,3 +169,18 @@ export interface BatchTraceability {
   verifiedBy: string;
   qualityNotes: string;
 }
+
+export interface LiveActivityItem {
+  id: string;
+  type: 'quote' | 'message';
+  title: string;
+  sender: string;
+  details: string;
+  status: string;
+  reference?: string;
+  fulfillmentType?: 'delivery' | 'pickup';
+  timestamp: string;
+  badge: string;
+  link: string;
+}
+

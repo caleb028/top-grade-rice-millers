@@ -96,25 +96,50 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [pathname, isLoginPage]);
 
   useEffect(() => {
+    if (isLoginPage) return;
+
+    const fetchStats = async () => {
+      try {
+        const statsRes = await fetch('/api/admin/stats');
+        if (!statsRes.ok) return;
+        const statsData = await statsRes.json();
+        if (statsData.success && statsData.stats) {
+          setStats({
+            pendingQuotes: statsData.stats.pendingQuotes,
+            unreadMessages: statsData.stats.unreadMessages,
+          });
+        }
+      } catch {
+        // quiet catch
+      }
+    };
+
     const handleRefresh = () => {
-      fetch('/api/admin/stats')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.stats) {
-            setStats({
-              pendingQuotes: data.stats.pendingQuotes,
-              unreadMessages: data.stats.unreadMessages,
-            });
-          }
-        })
-        .catch(() => {});
+      fetchStats();
+    };
+
+    // Polling heartbeat every 5s when page visible
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchStats();
+      }
+    }, 5000);
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchStats();
+      }
     };
 
     window.addEventListener('tgrm_stats_refresh', handleRefresh);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
+      clearInterval(interval);
       window.removeEventListener('tgrm_stats_refresh', handleRefresh);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [isLoginPage]);
 
   const handleLogout = async () => {
     try {

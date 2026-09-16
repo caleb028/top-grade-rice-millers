@@ -9,6 +9,7 @@ import {
   GalleryImage,
   CompanyInfo,
   AdminSettings,
+  LiveActivityItem,
 } from '@/types';
 import { sampleBatches, productsList, millingServicesList, companyConfig } from '@/data/companyConfig';
 import { verifyPassword, hashPassword, safeStringCompare } from '@/lib/crypto';
@@ -565,4 +566,44 @@ export async function getAdminDashboardStats() {
 export async function getBatchRecord(batchNumber: string): Promise<BatchTraceability | null> {
   const upper = batchNumber.trim().toUpperCase();
   return sampleBatches[upper] || null;
+}
+
+export async function getLiveActivities(limit = 20): Promise<LiveActivityItem[]> {
+  const store = getStorage();
+  const activities: LiveActivityItem[] = [];
+
+  for (const q of store.quotes) {
+    activities.push({
+      id: `act_q_${q.id}`,
+      type: 'quote',
+      title: `Quote Request: ${q.productName || 'Rice Supply'}`,
+      sender: q.name,
+      details: `${q.quantityBags || q.quantity || 1} ${q.unit || 'bags'} · ${q.fulfillmentType === 'pickup' ? 'Self Pick-up at Mill (Wang\'uru)' : `Delivery to ${q.county || 'Destination'}`}`,
+      status: q.status,
+      reference: q.referenceNumber,
+      fulfillmentType: q.fulfillmentType || 'delivery',
+      timestamp: q.createdAt,
+      badge: q.status === 'Pending' ? 'New Quote' : q.status,
+      link: '/admin/quotes',
+    });
+  }
+
+  for (const c of store.contacts) {
+    activities.push({
+      id: `act_c_${c.id}`,
+      type: 'message',
+      title: `Message: ${c.subject}`,
+      sender: c.name,
+      details: c.message.length > 80 ? c.message.slice(0, 80) + '...' : c.message,
+      status: c.status,
+      reference: c.phone || c.email || 'Direct Channel',
+      timestamp: c.createdAt,
+      badge: c.status === 'New' ? 'Unread Message' : c.status,
+      link: '/admin/messages',
+    });
+  }
+
+  // Sort descending by timestamp
+  activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  return activities.slice(0, limit);
 }
