@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { companyConfig } from '@/data/companyConfig';
@@ -6,6 +8,23 @@ import { MapPin, Phone, Mail, MessageSquare, ArrowUpRight, ShieldCheck } from 'l
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [company, setCompany] = useState(companyConfig);
+
+  useEffect(() => {
+    fetch('/api/company')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.company) {
+          setCompany((prev) => ({
+            ...prev,
+            ...data.company,
+            contact: { ...prev.contact, ...data.company.contact },
+            location: { ...prev.location, ...data.company.location },
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <footer className="bg-[#0B2519] text-[#F8F6EF] border-t border-[#D4A72C]/20 pt-12 sm:pt-16 pb-8 sm:pb-12">
@@ -43,7 +62,7 @@ export default function Footer() {
 
             <div className="pt-1 sm:pt-2 flex items-center gap-2 text-xs text-white/60">
               <MapPin className="w-4 h-4 text-[#D4A72C] shrink-0" />
-              <span>Wang&apos;uru Commercial Corridor, Mwea, Kenya</span>
+              <span>{company.location.landmark}, {company.location.town}, Kenya</span>
             </div>
           </div>
 
@@ -100,27 +119,27 @@ export default function Footer() {
               <div>
                 <span className="block text-xs text-white/50 mb-0.5">Telephone</span>
                 <a
-                  href={`tel:${companyConfig.contact.phoneRaw}`}
+                  href={`tel:${company.contact.phoneRaw}`}
                   className="hover:text-[#D4A72C] font-medium transition-colors"
                 >
-                  {companyConfig.contact.phoneDisplay}
+                  {company.contact.phoneDisplay}
                 </a>
               </div>
 
               <div>
                 <span className="block text-xs text-white/50 mb-0.5">Wholesale Enquiries</span>
                 <a
-                  href={`mailto:${companyConfig.contact.salesEmail}`}
+                  href={`mailto:${company.contact.salesEmail}`}
                   className="hover:text-[#D4A72C] font-medium transition-colors"
                 >
-                  {companyConfig.contact.salesEmail}
+                  {company.contact.salesEmail}
                 </a>
               </div>
 
               <div>
                 <span className="block text-xs text-white/50 mb-1">Direct WhatsApp</span>
                 <a
-                  href={companyConfig.getWhatsAppLink('general')}
+                  href={`https://wa.me/${company.contact.whatsappNumber}?text=${encodeURIComponent('Hello Top Grade Rice Millers, I would like to inquire about your rice products.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-[#25D366] hover:text-[#25D366]/80 transition-colors font-medium text-xs border border-white/10 px-3 py-2.5 min-h-[44px] rounded-sm bg-white/5 active:scale-[0.99]"
@@ -133,7 +152,7 @@ export default function Footer() {
 
               <div className="pt-1 text-xs text-white/60">
                 <span className="text-white/40 block">Operational Hours:</span>
-                Mon – Fri: 7:30 AM – 5:30 PM | Sat: 8:00 AM – 2:00 PM
+                {company.contact.businessHours?.map((bh) => `${bh.days}: ${bh.hours}`).join(' | ') || 'Mon – Fri: 7:30 AM – 5:30 PM | Sat: 8:00 AM – 2:00 PM'}
               </div>
             </div>
           </div>

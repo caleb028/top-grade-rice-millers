@@ -35,10 +35,21 @@ export default function ContactSection() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [lastSubmitted, setLastSubmitted] = useState<{ name: string; subject: string } | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    const hasPhone = form.phone.trim().length > 0;
+    const hasEmail = form.email.trim().length > 0;
+
+    if (!hasPhone && !hasEmail) {
+      setError('Please provide at least one contact method (phone number or email) so our team can reach you.');
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch('/api/contact', {
@@ -52,6 +63,7 @@ export default function ContactSection() {
         throw new Error(data.message || 'Failed to dispatch message.');
       }
 
+      setLastSubmitted({ name: form.name, subject: form.subject });
       setSuccess(true);
       setForm({ name: '', phone: '', email: '', subject: 'General Inquiries', message: '' });
     } catch (err: unknown) {
@@ -239,21 +251,46 @@ export default function ContactSection() {
             </div>
 
             {success ? (
-              <div className="p-6 bg-[#123D2A]/5 border border-[#123D2A]/15 rounded-xs text-center space-y-3">
-                <CheckCircle2 className="w-10 h-10 text-[#123D2A] mx-auto" />
-                <h4 className="font-serif text-lg font-bold text-[#123D2A]">
-                  Message Received
-                </h4>
-                <p className="text-xs text-black/70 max-w-sm mx-auto">
-                  Thank you for reaching out to Top Grade Rice Millers. A customer representative will respond shortly.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setSuccess(false)}
-                  className="text-xs font-semibold text-[#123D2A] underline hover:text-[#D4A72C] py-2 cursor-pointer"
-                >
-                  Send another message
-                </button>
+              <div className="p-6 sm:p-8 bg-[#123D2A]/5 border border-[#123D2A]/15 rounded-xs text-center space-y-4">
+                <div className="w-12 h-12 rounded-full bg-[#123D2A] text-[#D4A72C] flex items-center justify-center mx-auto shadow-md">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-serif text-lg sm:text-xl font-bold text-[#123D2A]">
+                    Message Successfully Dispatched
+                  </h4>
+                  <p className="text-xs text-black/75 max-w-sm mx-auto leading-relaxed">
+                    Thank you{lastSubmitted?.name ? `, ${lastSubmitted.name}` : ''}! Your message regarding <strong className="text-[#123D2A]">{lastSubmitted?.subject || 'your enquiry'}</strong> has been received by our Mwea front desk.
+                  </p>
+                  <p className="text-[11px] text-black/50">
+                    We review and reply to all inquiries during official facility hours.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <a
+                    href={`https://wa.me/${company.contact.whatsappNumber}?text=${encodeURIComponent(
+                      `Hello Top Grade Rice Millers, I just sent a message through your website regarding "${lastSubmitted?.subject || 'Enquiry'}". My name is ${lastSubmitted?.name || 'Customer'}.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white px-4 py-2.5 min-h-[42px] rounded-xs text-xs font-semibold uppercase tracking-wider transition-colors shadow-xs"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Follow up on WhatsApp</span>
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSuccess(false);
+                      setLastSubmitted(null);
+                    }}
+                    className="w-full sm:w-auto px-4 py-2.5 min-h-[42px] text-xs font-semibold text-[#123D2A] hover:bg-[#123D2A]/10 rounded-xs transition-colors cursor-pointer"
+                  >
+                    Send another message
+                  </button>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -281,31 +318,40 @@ export default function ContactSection() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-[#123D2A] uppercase tracking-wider mb-1">
-                      Phone Contact *
+                      Phone / WhatsApp
                     </label>
                     <input
                       type="tel"
-                      required
-                      placeholder="e.g. +254 700 000 000"
+                      placeholder="e.g. 0712 345 678 or +254..."
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
                       className="w-full px-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-[#FCFAF5] border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none transition-colors"
                     />
+                    <span className="text-[10px] text-black/45 block mt-1">
+                      Kenyan mobile or international
+                    </span>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-[#123D2A] uppercase tracking-wider mb-1">
-                      Email Address *
+                      Email Address
                     </label>
                     <input
                       type="email"
-                      required
                       placeholder="e.g. grace@example.com"
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
                       className="w-full px-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-[#FCFAF5] border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none transition-colors"
                     />
+                    <span className="text-[10px] text-black/45 block mt-1">
+                      Corporate or personal inbox
+                    </span>
                   </div>
+                </div>
+
+                <div className="p-2.5 bg-[#FCFAF5] border border-[#123D2A]/10 rounded-xs text-[11px] text-[#123D2A]/75 flex items-center gap-2">
+                  <span className="text-[#D4A72C] font-bold">ℹ</span>
+                  <span>Provide either a phone number or email address so we can reply to your query.</span>
                 </div>
 
                 <div>
@@ -315,11 +361,12 @@ export default function ContactSection() {
                   <select
                     value={form.subject}
                     onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    className="w-full px-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-[#FCFAF5] border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none transition-colors"
+                    className="w-full px-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-[#FCFAF5] border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none transition-colors cursor-pointer"
                   >
                     <option value="General Inquiries">General Inquiries</option>
                     <option value="Commercial Rice Milling Services">Commercial Rice Milling Services</option>
                     <option value="Wholesale Rice Purchase">Wholesale Rice Purchase</option>
+                    <option value="Self Pick-up at Mill Inquiry">Self Pick-up at Mill Inquiry</option>
                     <option value="Distribution Partnership">Distribution Partnership</option>
                     <option value="Facility Visit / Inspection">Facility Visit / Inspection</option>
                   </select>
@@ -356,6 +403,27 @@ export default function ContactSection() {
                     </>
                   )}
                 </button>
+
+                {/* Instant WhatsApp alternative divider & button */}
+                <div className="pt-2 border-t border-[#123D2A]/10 space-y-2">
+                  <div className="flex items-center justify-between text-[11px] text-black/50">
+                    <span>Need an immediate response?</span>
+                    <span className="text-[#25D366] font-medium">Official WhatsApp</span>
+                  </div>
+                  <a
+                    href={`https://wa.me/${company.contact.whatsappNumber}?text=${encodeURIComponent(
+                      form.name
+                        ? `Hello Top Grade Rice Millers, my name is ${form.name}. I would like to enquire about ${form.subject}.`
+                        : `Hello Top Grade Rice Millers, I would like to enquire about ${form.subject}.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white py-2.5 min-h-[42px] rounded-xs text-xs font-semibold uppercase tracking-wider transition-colors shadow-2xs active:scale-[0.99]"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Chat Directly on WhatsApp</span>
+                  </a>
+                </div>
               </form>
             )}
 

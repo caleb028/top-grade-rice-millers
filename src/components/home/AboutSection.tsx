@@ -1,12 +1,29 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { companyConfig } from '@/data/companyConfig';
 import { MapPin, Droplets, Mountain, Award, FileDown } from 'lucide-react';
 
 export default function AboutSection() {
+  const [company, setCompany] = useState(companyConfig);
+
+  useEffect(() => {
+    fetch('/api/company')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.company) {
+          setCompany((prev) => ({
+            ...prev,
+            ...data.company,
+            aboutText: { ...prev.aboutText, ...data.company.aboutText },
+            location: { ...prev.location, ...data.company.location },
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
   return (
     <section id="about" className="py-16 sm:py-24 md:py-32 bg-[#F8F6EF] relative overflow-hidden border-b border-[#123D2A]/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -101,7 +118,7 @@ export default function AboutSection() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="font-serif text-base sm:text-lg text-[#17211C] leading-relaxed"
             >
-              {companyConfig.aboutText.lead}: {companyConfig.aboutText.summary}
+              {company.aboutText.lead}: {company.aboutText.summary}
             </motion.p>
 
             <motion.p
@@ -111,7 +128,7 @@ export default function AboutSection() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="text-xs sm:text-sm md:text-base text-[#17211C]/75 font-sans leading-relaxed"
             >
-              {companyConfig.aboutText.detail}
+              {company.aboutText.detail}
             </motion.p>
 
             {/* Mission & Quality commitment blocks */}
@@ -131,7 +148,7 @@ export default function AboutSection() {
                     Our Mission
                   </h4>
                   <p className="text-xs sm:text-sm text-[#17211C]/75 font-sans mt-0.5">
-                    {companyConfig.aboutText.mission}
+                    {company.aboutText.mission}
                   </p>
                 </div>
               </div>
@@ -145,7 +162,7 @@ export default function AboutSection() {
                     Milling Discipline
                   </h4>
                   <p className="text-xs sm:text-sm text-[#17211C]/75 font-sans mt-0.5">
-                    {companyConfig.aboutText.millingCommitment}
+                    {company.aboutText.millingCommitment}
                   </p>
                 </div>
               </div>

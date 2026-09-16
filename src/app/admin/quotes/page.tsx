@@ -120,6 +120,10 @@ export default function AdminQuotesPage() {
         }
         setToastMessage(`Status updated to ${newStatus}`);
         setTimeout(() => setToastMessage(null), 3000);
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('tgrm_stats_refresh'));
+        }
       } else {
         alert(data.message || 'Failed to update quote status.');
       }
@@ -153,6 +157,10 @@ export default function AdminQuotesPage() {
       setToastMessage(`Quote ${quoteToDelete.referenceNumber} has been permanently deleted.`);
       setTimeout(() => setToastMessage(null), 3500);
       setQuoteToDelete(null);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('tgrm_stats_refresh'));
+      }
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'An error occurred during deletion.';
       setDeleteError(errorMsg);

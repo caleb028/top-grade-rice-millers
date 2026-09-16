@@ -5,13 +5,11 @@ import Preloader from '@/components/layout/Preloader';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import Hero from '@/components/home/Hero';
-import IntroSection from '@/components/home/IntroSection';
-import FarmToTable from '@/components/home/FarmToTable';
+import AboutSection from '@/components/home/AboutSection';
 import ProductShowcase from '@/components/home/ProductShowcase';
+import QualitySection from '@/components/home/QualitySection';
 import MillingServices from '@/components/home/MillingServices';
 import WholesaleSection from '@/components/home/WholesaleSection';
-import QualitySection from '@/components/home/QualitySection';
-import AboutSection from '@/components/home/AboutSection';
 import ContactSection from '@/components/home/ContactSection';
 import QuoteModal from '@/components/home/QuoteModal';
 import { Product, QuoteRequestType } from '@/types';
@@ -41,31 +39,25 @@ export default function HomePage() {
       <Navbar onOpenQuoteModal={() => handleOpenQuote(undefined, 'retail')} />
 
       <main className="min-h-screen">
-        {/* Cinematic First Impression */}
+        {/* 1. Cinematic First Impression */}
         <Hero onOpenQuoteModal={() => handleOpenQuote(undefined, 'retail')} />
 
-        {/* Introduction: Where Great Rice Begins */}
-        <IntroSection />
-
-        {/* From Farm to Table: 5-Stage Operational Journey */}
-        <FarmToTable />
-
-        {/* Our Rice: Milled Selections */}
-        <ProductShowcase onRequestQuote={(prod) => handleOpenQuote(prod, 'retail')} />
-
-        {/* Professional Milling Services */}
-        <MillingServices onOpenQuoteModal={() => handleOpenQuote(undefined, 'milling')} />
-
-        {/* Wholesale & Institutional Bulk Supply */}
-        <WholesaleSection onOpenQuoteModal={() => handleOpenQuote(undefined, 'wholesale')} />
-
-        {/* Quality You Can See. Quality You Can Trust. */}
-        <QualitySection />
-
-        {/* Rooted in Mwea: Agricultural Heritage & Mission */}
+        {/* 2. Rooted in Mwea: Agricultural Heritage & Facility Foundations */}
         <AboutSection />
 
-        {/* Physical Presence, Google Maps & Direct Messages */}
+        {/* 3. Our Rice: Milled Selections Catalogue */}
+        <ProductShowcase onRequestQuote={(prod) => handleOpenQuote(prod, 'retail')} />
+
+        {/* 4. Milling Discipline, Standards & 5-Stage Grain Lifecycle */}
+        <QualitySection />
+
+        {/* 5. Professional Commercial Milling Services */}
+        <MillingServices onOpenQuoteModal={() => handleOpenQuote(undefined, 'milling')} />
+
+        {/* 6. Wholesale & Institutional Bulk Supply */}
+        <WholesaleSection onOpenQuoteModal={() => handleOpenQuote(undefined, 'wholesale')} />
+
+        {/* 7. Physical Presence, Live Google Maps & Direct Communications */}
         <ContactSection />
       </main>
 

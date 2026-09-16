@@ -55,9 +55,11 @@ export function isValidEmail(email: unknown): boolean {
  */
 export function isValidPhone(phone: unknown): boolean {
   if (typeof phone !== 'string') return false;
-  const clean = phone.trim().replace(/\s+/g, '');
-  if (clean.length < 8 || clean.length > 20) return false;
-  return PHONE_REGEX.test(clean);
+  const trimmed = phone.trim();
+  if (trimmed.length < 8 || trimmed.length > 25) return false;
+  const digitsOnly = trimmed.replace(/\D/g, '');
+  if (digitsOnly.length < 8 || digitsOnly.length > 15) return false;
+  return /^[+]?[\d\s().-]{8,25}$/.test(trimmed);
 }
 
 /**

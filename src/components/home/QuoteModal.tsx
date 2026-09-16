@@ -64,6 +64,7 @@ export default function QuoteModal({
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
   const [organization, setOrganization] = useState('');
+  const [products, setProducts] = useState<Product[]>(productsList);
   const [customerType, setCustomerType] = useState('Personal / Household');
   const [productId, setProductId] = useState(productsList[0]?.id || '');
   const [quantity, setQuantity] = useState<number>(10);
@@ -73,6 +74,17 @@ export default function QuoteModal({
   const [town, setTown] = useState('');
   const [deliveryDetails, setDeliveryDetails] = useState('');
   const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>('delivery');
+
+  useEffect(() => {
+    fetch('/api/products?active=true')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.products) && data.products.length > 0) {
+          setProducts(data.products);
+        }
+      })
+      .catch(() => {});
+  }, []);
   const [pickupDate, setPickupDate] = useState('');
   const [pickupNotes, setPickupNotes] = useState('');
   const [message, setMessage] = useState('');
@@ -612,14 +624,14 @@ export default function QuoteModal({
                           value={productId}
                           onChange={(e) => {
                             setProductId(e.target.value);
-                            const p = productsList.find((item) => item.id === e.target.value);
+                            const p = products.find((item) => item.id === e.target.value);
                             if (p?.sizes && p.sizes.length > 0) {
                               setBagSize(p.sizes[p.sizes.length - 1]);
                             }
                           }}
                           className="w-full px-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-white border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none"
                         >
-                          {productsList.map((prod) => (
+                          {products.map((prod) => (
                             <option key={prod.id} value={prod.id}>
                               {prod.name}
                             </option>

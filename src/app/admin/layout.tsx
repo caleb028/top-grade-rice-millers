@@ -95,6 +95,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [pathname, isLoginPage]);
 
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetch('/api/admin/stats')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.stats) {
+            setStats({
+              pendingQuotes: data.stats.pendingQuotes,
+              unreadMessages: data.stats.unreadMessages,
+            });
+          }
+        })
+        .catch(() => {});
+    };
+
+    window.addEventListener('tgrm_stats_refresh', handleRefresh);
+    return () => {
+      window.removeEventListener('tgrm_stats_refresh', handleRefresh);
+    };
+  }, []);
+
   const handleLogout = async () => {
     try {
       await fetch('/api/admin/auth', { method: 'DELETE' });

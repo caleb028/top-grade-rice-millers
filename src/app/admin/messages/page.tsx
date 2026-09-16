@@ -59,6 +59,25 @@ export default function AdminMessagesPage() {
     };
   }, [activeMessage, messageToDelete]);
 
+  const getWhatsAppReplyUrl = (m: ContactMessage) => {
+    if (!m.phone) return '#';
+    const digitsOnly = m.phone.replace(/\D/g, '');
+    const cleanPhone = digitsOnly.startsWith('0')
+      ? '254' + digitsOnly.slice(1)
+      : digitsOnly.startsWith('254')
+      ? digitsOnly
+      : digitsOnly;
+    const body = `Hello ${m.name}, thank you for contacting Top Grade Rice Millers regarding "${m.subject}". How can we assist you today?`;
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(body)}`;
+  };
+
+  const getEmailReplyUrl = (m: ContactMessage) => {
+    if (!m.email) return '#';
+    const subject = `Top Grade Rice Millers — Re: ${m.subject}`;
+    const body = `Dear ${m.name},\n\nThank you for reaching out to Top Grade Rice Millers regarding "${m.subject}".\n\n\n\nKind regards,\nTop Grade Rice Millers\nWang'uru Commercial Corridor, Mwea, Kirinyaga County, Kenya\n`;
+    return `mailto:${m.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+
   const handleUpdateStatus = async (id: string, status: ContactMessage['status']) => {
     try {
       const res = await fetch('/api/contact', {
@@ -76,6 +95,10 @@ export default function AdminMessagesPage() {
         }
         setToastMessage(`Message marked as ${status}.`);
         setTimeout(() => setToastMessage(null), 3000);
+
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('tgrm_stats_refresh'));
+        }
       }
     } catch (e) {
       console.error('Error updating status:', e);
@@ -101,6 +124,10 @@ export default function AdminMessagesPage() {
       setMessageToDelete(null);
       setToastMessage('Message permanently removed.');
       setTimeout(() => setToastMessage(null), 3000);
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('tgrm_stats_refresh'));
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Deletion failed.';
       alert(msg);
@@ -222,7 +249,31 @@ export default function AdminMessagesPage() {
               <div className="flex items-center justify-between pt-2 border-t border-black/5 text-[10px] text-black/40 font-mono">
                 <span>{new Date(m.createdAt).toLocaleDateString('en-GB')}</span>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  {m.phone && (
+                    <a
+                      href={getWhatsAppReplyUrl(m)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => handleUpdateStatus(m.id, 'Replied')}
+                      className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center text-[#25D366] bg-[#25D366]/10 hover:bg-[#25D366]/20 rounded-xs border border-[#25D366]/30 cursor-pointer"
+                      title="Reply on WhatsApp"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+
+                  {m.email && (
+                    <a
+                      href={getEmailReplyUrl(m)}
+                      onClick={() => handleUpdateStatus(m.id, 'Replied')}
+                      className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center text-[#123D2A] bg-black/5 hover:bg-black/10 rounded-xs border border-black/10 cursor-pointer"
+                      title="Reply via Email"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+
                   <button
                     type="button"
                     onClick={() => {
@@ -234,7 +285,7 @@ export default function AdminMessagesPage() {
                     className="inline-flex items-center gap-1 py-1.5 px-3 min-h-[36px] bg-[#123D2A] text-white rounded-xs font-medium text-xs hover:bg-[#184D35] cursor-pointer active:scale-[0.99]"
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    <span>Read</span>
+                    <span>View</span>
                   </button>
 
                   <button
@@ -319,6 +370,28 @@ export default function AdminMessagesPage() {
 
                     <td className="py-3 px-4 text-right whitespace-nowrap">
                       <div className="inline-flex items-center gap-1.5">
+                        {m.phone && (
+                          <a
+                            href={getWhatsAppReplyUrl(m)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => handleUpdateStatus(m.id, 'Replied')}
+                            className="p-1.5 text-[#25D366] hover:bg-emerald-50 rounded-xs transition-colors cursor-pointer"
+                            title="Reply on WhatsApp"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                        {m.email && (
+                          <a
+                            href={getEmailReplyUrl(m)}
+                            onClick={() => handleUpdateStatus(m.id, 'Replied')}
+                            className="p-1.5 text-black/60 hover:text-[#123D2A] hover:bg-[#123D2A]/10 rounded-xs transition-colors cursor-pointer"
+                            title="Reply via Email"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                          </a>
+                        )}
                         <button
                           onClick={() => {
                             setActiveMessage(m);
@@ -413,6 +486,48 @@ export default function AdminMessagesPage() {
                 <span className="text-black/50 text-[10px] block uppercase font-semibold">Full Message</span>
                 <div className="p-3 bg-[#FCFAF5] border border-black/10 rounded-xs mt-1 text-black/80 leading-relaxed whitespace-pre-wrap">
                   {activeMessage.message}
+                </div>
+              </div>
+
+              {/* Direct Response Options */}
+              <div className="p-3 bg-[#FCFAF5] rounded-xs border border-[#123D2A]/15 space-y-2">
+                <span className="text-[10px] font-bold text-[#123D2A] uppercase tracking-wider block">
+                  Quick Reply & Communication
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  {activeMessage.phone && (
+                    <a
+                      href={getWhatsAppReplyUrl(activeMessage)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => handleUpdateStatus(activeMessage.id, 'Replied')}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-semibold rounded-xs text-xs transition-colors shadow-2xs cursor-pointer active:scale-[0.99]"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>Reply on WhatsApp</span>
+                    </a>
+                  )}
+
+                  {activeMessage.phone && (
+                    <a
+                      href={`tel:${activeMessage.phone}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-[#123D2A]/20 text-[#123D2A] hover:bg-[#123D2A]/5 font-medium rounded-xs text-xs transition-colors cursor-pointer"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-[#123D2A]" />
+                      <span>Call {activeMessage.phone}</span>
+                    </a>
+                  )}
+
+                  {activeMessage.email && (
+                    <a
+                      href={getEmailReplyUrl(activeMessage)}
+                      onClick={() => handleUpdateStatus(activeMessage.id, 'Replied')}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#123D2A] hover:bg-[#184D35] text-[#F8F6EF] font-medium rounded-xs text-xs transition-colors shadow-2xs cursor-pointer active:scale-[0.99]"
+                    >
+                      <Mail className="w-3.5 h-3.5 text-[#D4A72C]" />
+                      <span>Reply via Email</span>
+                    </a>
+                  )}
                 </div>
               </div>
 
