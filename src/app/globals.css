@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-forest: #123D2A;
+    --color-forest-dark: #0B2519;
+    --color-gold: #D4A72C;
+    --color-warm-rice: #F8F6EF;
+    --color-charcoal: #17211C;
+    --color-sage: #71856F;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #F8F6EF;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: #F8F6EF;
+    color: #17211C;
+    selection-background-color: #D4A72C;
+    selection-color: #123D2A;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  ::selection {
+    background-color: #D4A72C;
+    color: #123D2A;
+  }
+
+  /* Accessible focus indicators */
+  :focus-visible {
+    outline: 2px solid #D4A72C;
+    outline-offset: 2px;
+  }
+
+  /* Prevent automatic iOS Safari zoom-in on input focus */
+  @media screen and (max-width: 640px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+}
+
+/* Safe area padding utilities for modern notched phones */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* Hide scrollbar utility for touch scrollbars */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Cinematic film grain texture layer */
+.film-grain {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Subtle luxury gold gradient border */
+.gold-border-gradient {
+  border-image: linear-gradient(to bottom, #D4A72C, transparent) 1;
+}
+
+/* Subtle luxury card styling */
+.corporate-card {
+  background: #FCFAF5;
+  border: 1px solid rgba(18, 61, 42, 0.08);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease;
+}
+
+.corporate-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(212, 167, 44, 0.35);
+  box-shadow: 0 16px 36px -12px rgba(18, 61, 42, 0.08);
+}
+
+/* Custom editorial scrollbar on desktop */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #F8F6EF;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #123D2A;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #D4A72C;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

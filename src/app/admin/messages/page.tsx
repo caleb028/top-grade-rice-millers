@@ -1,0 +1,517 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { ContactMessage } from '@/types';
+import {
+  MessageSquare,
+  Search,
+  RefreshCw,
+  Mail,
+  Phone,
+  Trash2,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  X,
+  Eye,
+  Calendar,
+} from 'lucide-react';
+
+export default function AdminMessagesPage() {
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+
+  // Modal / Detail state
+  const [activeMessage, setActiveMessage] = useState<ContactMessage | null>(null);
+  const [messageToDelete, setMessageToDelete] = useState<ContactMessage | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const fetchMessages = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/contact');
+      const data = await res.json();
+      if (data.success) {
+        setMessages(data.messages || []);
+      }
+    } catch (e) {
+      console.error('Failed to load messages:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  useEffect(() => {
+    if (activeMessage || messageToDelete) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [activeMessage, messageToDelete]);
+
+  const handleUpdateStatus = async (id: string, status: ContactMessage['status']) => {
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === id ? { ...m, status } : m))
+        );
+        if (activeMessage?.id === id) {
+          setActiveMessage({ ...activeMessage, status });
+        }
+        setToastMessage(`Message marked as ${status}.`);
+        setTimeout(() => setToastMessage(null), 3000);
+      }
+    } catch (e) {
+      console.error('Error updating status:', e);
+    }
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!messageToDelete) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/contact?id=${encodeURIComponent(messageToDelete.id)}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to delete message.');
+      }
+
+      setMessages((prev) => prev.filter((m) => m.id !== messageToDelete.id));
+      if (activeMessage?.id === messageToDelete.id) {
+        setActiveMessage(null);
+      }
+      setMessageToDelete(null);
+      setToastMessage('Message permanently removed.');
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Deletion failed.';
+      alert(msg);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const filteredMessages = messages.filter((m) => {
+    const matchesSearch =
+      m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.message.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === 'All' || m.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Toast */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-[#123D2A] text-white px-4 py-3 rounded-sm shadow-xl border border-[#D4A72C]/40 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <CheckCircle2 className="w-5 h-5 text-[#D4A72C] shrink-0" />
+          <p className="text-xs font-medium">{toastMessage}</p>
+          <button onClick={() => setToastMessage(null)} className="ml-2 text-white/60 hover:text-white">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#123D2A]/10 pb-5">
+        <div>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#123D2A]">
+            Contact Messages
+          </h1>
+          <p className="text-xs text-black/60 mt-1">
+            Inbound public communications submitted through the contact section. ({messages.length} total)
+          </p>
+        </div>
+
+        <button
+          onClick={fetchMessages}
+          disabled={loading}
+          className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#123D2A]/15 text-xs font-medium rounded-xs hover:bg-[#F8F6EF] transition-colors cursor-pointer"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#D4A72C]' : ''}`} />
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      {/* Search & Filter */}
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-white p-4 rounded-sm border border-[#123D2A]/10 shadow-2xs">
+        <div className="sm:col-span-8 relative">
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-black/40" />
+          <input
+            type="text"
+            placeholder="Search by sender name, email, subject or keyword..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-xs rounded-xs bg-[#FCFAF5] border border-black/10 focus:border-[#D4A72C] outline-none"
+          />
+        </div>
+
+        <div className="sm:col-span-4">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full px-3 py-2 text-xs rounded-xs bg-[#FCFAF5] border border-black/10 focus:border-[#D4A72C] outline-none"
+          >
+            <option value="All">All Inquiries</option>
+            <option value="New">Unread (New)</option>
+            <option value="Read">Read</option>
+            <option value="Replied">Replied</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Mobile Stacked Card View (phones & small screens) */}
+      <div className="block md:hidden space-y-3">
+        {filteredMessages.length > 0 ? (
+          filteredMessages.map((m) => (
+            <div
+              key={m.id}
+              className={`bg-white p-4 rounded-sm border shadow-2xs space-y-2.5 text-xs transition-colors ${
+                m.status === 'New' ? 'border-[#D4A72C]/40 bg-[#FCFAF5]' : 'border-[#123D2A]/10'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-2 border-b border-black/5 pb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {m.status === 'New' && (
+                    <span className="w-2 h-2 rounded-full bg-[#D4A72C] shrink-0" />
+                  )}
+                  <div>
+                    <span className="font-bold text-black block text-sm truncate">{m.name}</span>
+                    <span className="text-[11px] text-black/50 block truncate">{m.email}</span>
+                  </div>
+                </div>
+                <span
+                  className={`px-2 py-0.5 text-[10px] font-medium rounded-xs border shrink-0 ${
+                    m.status === 'New'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : m.status === 'Replied'
+                      ? 'bg-blue-50 text-blue-800 border-blue-200'
+                      : 'bg-gray-100 text-gray-700 border-gray-200'
+                  }`}
+                >
+                  {m.status}
+                </span>
+              </div>
+
+              <div>
+                <span className="font-medium text-[#123D2A] block">{m.subject}</span>
+                <p className="text-black/70 text-[11px] line-clamp-2 mt-0.5">{m.message}</p>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-black/5 text-[10px] text-black/40 font-mono">
+                <span>{new Date(m.createdAt).toLocaleDateString('en-GB')}</span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveMessage(m);
+                      if (m.status === 'New') {
+                        handleUpdateStatus(m.id, 'Read');
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 py-1.5 px-3 min-h-[36px] bg-[#123D2A] text-white rounded-xs font-medium text-xs hover:bg-[#184D35] cursor-pointer active:scale-[0.99]"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Read</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setMessageToDelete(m)}
+                    className="p-1.5 min-h-[36px] min-w-[36px] inline-flex items-center justify-center text-red-600 hover:bg-red-50 rounded-xs border border-red-200 cursor-pointer active:scale-[0.99]"
+                    title="Delete Message"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="bg-white p-8 rounded-sm border border-[#123D2A]/10 text-center text-black/50 text-xs">
+            {loading ? 'Loading message inbox...' : 'No messages match your query.'}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Messages Table */}
+      <div className="hidden md:block bg-white rounded-sm border border-[#123D2A]/10 shadow-2xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-[#123D2A] text-[#F8F6EF] uppercase tracking-wider text-[10px]">
+              <tr>
+                <th className="py-3 px-4">Sender</th>
+                <th className="py-3 px-4">Subject</th>
+                <th className="py-3 px-4">Message Preview</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4">Date</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/5">
+              {filteredMessages.length > 0 ? (
+                filteredMessages.map((m) => (
+                  <tr
+                    key={m.id}
+                    className={`hover:bg-[#FCFAF5] transition-colors ${
+                      m.status === 'New' ? 'bg-[#D4A72C]/5 font-medium' : ''
+                    }`}
+                  >
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        {m.status === 'New' && (
+                          <span className="w-2 h-2 rounded-full bg-[#D4A72C] shrink-0" />
+                        )}
+                        <div>
+                          <span className="font-semibold text-black block">{m.name}</span>
+                          <span className="text-[11px] text-black/50 block">{m.email}</span>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-4 font-medium text-[#123D2A]">
+                      {m.subject}
+                    </td>
+
+                    <td className="py-3 px-4 text-black/70 max-w-xs truncate">
+                      {m.message}
+                    </td>
+
+                    <td className="py-3 px-4">
+                      <span
+                        className={`px-2 py-0.5 text-[10px] font-medium rounded-xs border ${
+                          m.status === 'New'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : m.status === 'Replied'
+                            ? 'bg-blue-50 text-blue-800 border-blue-200'
+                            : 'bg-gray-100 text-gray-700 border-gray-200'
+                        }`}
+                      >
+                        {m.status}
+                      </span>
+                    </td>
+
+                    <td className="py-3 px-4 text-black/50 text-[11px] whitespace-nowrap">
+                      {new Date(m.createdAt).toLocaleDateString('en-GB')}
+                    </td>
+
+                    <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            setActiveMessage(m);
+                            if (m.status === 'New') {
+                              handleUpdateStatus(m.id, 'Read');
+                            }
+                          }}
+                          className="p-1.5 text-black/60 hover:text-[#123D2A] hover:bg-[#123D2A]/10 rounded-xs transition-colors cursor-pointer"
+                          title="Open Message"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setMessageToDelete(m)}
+                          className="p-1.5 text-black/60 hover:text-red-600 hover:bg-red-50 rounded-xs transition-colors cursor-pointer"
+                          title="Delete Message"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="py-12 text-center text-black/50">
+                    {loading ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin text-[#D4A72C]" />
+                        <span>Loading message inbox...</span>
+                      </div>
+                    ) : (
+                      'No messages match your query.'
+                    )}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Message Detail Modal */}
+      {activeMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white border border-[#123D2A]/20 rounded-sm max-w-lg w-full p-4 sm:p-6 shadow-2xl space-y-4 max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-black/10">
+              <h3 className="font-serif text-lg font-bold text-[#123D2A]">
+                Inquiry from {activeMessage.name}
+              </h3>
+              <button
+                onClick={() => setActiveMessage(null)}
+                className="p-1 text-black/40 hover:text-black cursor-pointer"
+              >
+                <X className="w-5 h-5 sm:w-4 sm:h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3 p-3 bg-[#FCFAF5] rounded-xs border border-black/10">
+                <div>
+                  <span className="text-black/50 text-[10px] block uppercase font-semibold">Phone</span>
+                  {activeMessage.phone ? (
+                    <a href={`tel:${activeMessage.phone}`} className="font-medium text-[#123D2A] hover:underline flex items-center gap-1">
+                      <Phone className="w-3 h-3 text-[#71856F]" />
+                      <span>{activeMessage.phone}</span>
+                    </a>
+                  ) : (
+                    <span className="text-black/40">Not provided</span>
+                  )}
+                </div>
+
+                <div>
+                  <span className="text-black/50 text-[10px] block uppercase font-semibold">Email</span>
+                  {activeMessage.email ? (
+                    <a href={`mailto:${activeMessage.email}`} className="font-medium text-[#123D2A] hover:underline flex items-center gap-1">
+                      <Mail className="w-3 h-3 text-[#71856F]" />
+                      <span>{activeMessage.email}</span>
+                    </a>
+                  ) : (
+                    <span className="text-black/40">Not provided</span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <span className="text-black/50 text-[10px] block uppercase font-semibold">Subject</span>
+                <p className="font-semibold text-sm text-[#123D2A] mt-0.5">{activeMessage.subject}</p>
+              </div>
+
+              <div>
+                <span className="text-black/50 text-[10px] block uppercase font-semibold">Full Message</span>
+                <div className="p-3 bg-[#FCFAF5] border border-black/10 rounded-xs mt-1 text-black/80 leading-relaxed whitespace-pre-wrap">
+                  {activeMessage.message}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-black/50 text-[11px]">Mark as:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateStatus(activeMessage.id, 'Replied')}
+                    className="px-2 py-0.5 bg-blue-50 text-blue-800 border border-blue-200 rounded-xs text-[11px] font-medium hover:bg-blue-100 cursor-pointer"
+                  >
+                    Replied
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateStatus(activeMessage.id, 'New')}
+                    className="px-2 py-0.5 bg-gray-100 text-gray-700 border border-gray-200 rounded-xs text-[11px] font-medium hover:bg-gray-200 cursor-pointer"
+                  >
+                    Unread
+                  </button>
+                </div>
+
+                <span className="text-[10px] text-black/40 font-mono">
+                  {new Date(activeMessage.createdAt).toLocaleString('en-GB')}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-black/10">
+              <button
+                type="button"
+                onClick={() => setMessageToDelete(activeMessage)}
+                className="text-xs text-red-600 hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Message</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveMessage(null)}
+                className="px-4 py-1.5 text-xs bg-[#123D2A] text-white rounded-xs font-medium hover:bg-[#184D35] cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {messageToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white border border-red-200 rounded-sm max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0 text-red-600">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-serif text-lg font-bold text-[#123D2A]">
+                  Delete Message?
+                </h3>
+                <p className="text-xs text-black/70 leading-relaxed">
+                  Permanently delete inquiry from <strong className="text-black">{messageToDelete.name}</strong> ({messageToDelete.subject})? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-black/10">
+              <button
+                type="button"
+                onClick={() => setMessageToDelete(null)}
+                disabled={actionLoading}
+                className="px-3.5 py-1.5 text-xs text-black/70 hover:bg-black/5 rounded-xs font-medium cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteMessage}
+                disabled={actionLoading}
+                className="px-4 py-1.5 text-xs bg-red-600 text-white font-semibold rounded-xs hover:bg-red-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                {actionLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Yes, Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
