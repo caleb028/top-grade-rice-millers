@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Playfair_Display, Inter } from 'next/font/google';
 import './globals.css';
 import { companyConfig } from '@/data/companyConfig';
+import PreventZoom from '@/components/layout/PreventZoom';
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -21,7 +22,8 @@ export const viewport: Viewport = {
   themeColor: '#123D2A',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export const metadata: Metadata = {
@@ -200,6 +202,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-warm-rice text-charcoal min-h-screen flex flex-col">
+        <PreventZoom />
         {children}
       </body>
     </html>

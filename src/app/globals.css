@@ -19,6 +19,8 @@
     background-color: #F8F6EF;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    touch-action: manipulation;
+    overscroll-behavior-y: none;
   }
 
   body {
@@ -27,6 +29,8 @@
     selection-background-color: #D4A72C;
     selection-color: #123D2A;
     -webkit-overflow-scrolling: touch;
+    touch-action: manipulation;
+    overscroll-behavior-y: none;
   }
 
   ::selection {

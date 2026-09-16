@@ -111,11 +111,11 @@ export default function Hero({ onOpenQuoteModal }: HeroProps) {
           initial={{ opacity: 0, y: 20, scale: 0.97 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 1.0, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="space-y-1 sm:space-y-2 mb-3 sm:mb-4"
+          className="space-y-1 sm:space-y-2 mb-3 sm:mb-4 w-full px-1"
         >
-          <h1 className="font-serif text-3xl xs:text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-[#F8F6EF] uppercase leading-[0.98] sm:leading-[0.95] break-words">
+          <h1 className="font-serif text-[clamp(2.45rem,10.8vw,3.6rem)] sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-[#F8F6EF] uppercase leading-[0.93] sm:leading-[0.95] break-words">
             <span className="block">TOP GRADE</span>
-            <span className="block text-[#F8F6EF]/90 font-light">RICE MILLERS</span>
+            <span className="block text-[#F8F6EF]/95 font-semibold">RICE MILLERS</span>
           </h1>
         </motion.div>
 
