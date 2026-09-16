@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { saveQuote, getQuotes, deleteQuote, updateQuoteStatus } from '@/lib/db';
-import { QuoteRequest } from '@/types';
+import { QuoteRequest, FulfillmentType } from '@/types';
 import { requireAdminSession } from '@/lib/auth';
 import { checkRateLimit, getClientIp, rateLimitResponse } from '@/lib/rateLimit';
 import {
@@ -57,14 +57,27 @@ export async function POST(req: NextRequest) {
     const name = sanitizeText(body.name, 100);
     const phone = sanitizeText(body.phone, 25);
     const emailRaw = body.email ? sanitizeText(body.email, 100).toLowerCase().trim() : '';
+    const fulfillmentType: FulfillmentType = body.fulfillmentType === 'pickup' ? 'pickup' : 'delivery';
+    const pickupDate = body.pickupDate ? sanitizeText(body.pickupDate, 80) : undefined;
+    const pickupNotes = body.pickupNotes ? sanitizeText(body.pickupNotes, 300) : undefined;
+
     const company = body.company ? sanitizeText(body.company, 120) : undefined;
     const organization = body.organization ? sanitizeText(body.organization, 120) : undefined;
-    const county = body.county ? sanitizeText(body.county, 60) : undefined;
-    const town = body.town ? sanitizeText(body.town, 80) : undefined;
-    const deliveryLocation = sanitizeText(
-      body.deliveryLocation || [town, county].filter(Boolean).join(', ') || 'Mwea / On-site',
-      150
-    );
+    let county = body.county ? sanitizeText(body.county, 60) : undefined;
+    let town = body.town ? sanitizeText(body.town, 80) : undefined;
+    
+    let deliveryLocation: string;
+    if (fulfillmentType === 'pickup') {
+      county = county || 'Kirinyaga';
+      town = town || "Wang'uru";
+      deliveryLocation = "Self Pick-up at Mill (Wang'uru Highway Corridor, Mwea)";
+    } else {
+      deliveryLocation = sanitizeText(
+        body.deliveryLocation || [town, county].filter(Boolean).join(', ') || 'Mwea / On-site',
+        150
+      );
+    }
+
     const message = body.message ? sanitizeText(body.message, 1000) : undefined;
     const subject = body.subject ? sanitizeText(body.subject, 150) : undefined;
 
@@ -108,11 +121,13 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      if (!deliveryLocation || deliveryLocation === 'Mwea / On-site' && !county && !town) {
-        return NextResponse.json(
-          { success: false, message: 'Please provide your County or Town for delivery estimation.' },
-          { status: 400 }
-        );
+      if (fulfillmentType === 'delivery') {
+        if (!deliveryLocation || (deliveryLocation === 'Mwea / On-site' && !county && !town)) {
+          return NextResponse.json(
+            { success: false, message: 'Please provide your County or Town for delivery estimation.' },
+            { status: 400 }
+          );
+        }
       }
       customerType = customerType || 'Personal / Household';
     } else if (requestType === 'wholesale') {
@@ -183,6 +198,9 @@ export async function POST(req: NextRequest) {
 
     const cleanQuote = await saveQuote({
       requestType,
+      fulfillmentType,
+      pickupDate,
+      pickupNotes,
       name,
       company: company || organization,
       organization: organization || company,

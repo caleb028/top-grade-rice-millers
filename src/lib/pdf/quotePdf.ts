@@ -255,14 +255,42 @@ export async function generateQuotePdf(
       });
     }
 
-    specRows.push({
-      label: 'Delivery Destination',
-      value: quote.deliveryLocation,
-    });
-    specRows.push({
-      label: 'Supply Terms',
-      value: "Ex-Mill Wang'uru Hub or Scheduled Transit Dispatch",
-    });
+    if (quote.fulfillmentType === 'pickup') {
+      specRows.push({
+        label: 'Fulfillment Method',
+        value: "Direct Client Self Pick-up at Mill (Wang'uru, Mwea)",
+        highlight: true,
+      });
+      if (quote.pickupDate) {
+        specRows.push({
+          label: 'Planned Collection Date',
+          value: quote.pickupDate,
+        });
+      }
+      if (quote.pickupNotes) {
+        specRows.push({
+          label: 'Vehicle / Transport',
+          value: quote.pickupNotes,
+        });
+      }
+      specRows.push({
+        label: 'Supply Terms',
+        value: "Ex-Mill Wang'uru Facility · Direct Handover upon Loading",
+      });
+    } else {
+      specRows.push({
+        label: 'Fulfillment Method',
+        value: 'Road Dispatch / Delivery to Destination',
+      });
+      specRows.push({
+        label: 'Delivery Destination',
+        value: quote.deliveryLocation,
+      });
+      specRows.push({
+        label: 'Supply Terms',
+        value: "Ex-Mill Wang'uru Hub or Scheduled Transit Dispatch",
+      });
+    }
 
     drawSectionTable('2. Procurement Specifications', specRows);
   }

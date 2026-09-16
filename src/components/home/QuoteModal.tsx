@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Product, QuoteRequest, QuoteRequestType } from '@/types';
+import { Product, QuoteRequest, QuoteRequestType, FulfillmentType } from '@/types';
 import { productsList, companyConfig } from '@/data/companyConfig';
 import {
   X,
@@ -21,6 +21,7 @@ import {
   User,
   Building,
   Calendar,
+  Store,
 } from 'lucide-react';
 
 interface QuoteModalProps {
@@ -71,6 +72,9 @@ export default function QuoteModal({
   const [county, setCounty] = useState('Kirinyaga');
   const [town, setTown] = useState('');
   const [deliveryDetails, setDeliveryDetails] = useState('');
+  const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>('delivery');
+  const [pickupDate, setPickupDate] = useState('');
+  const [pickupNotes, setPickupNotes] = useState('');
   const [message, setMessage] = useState('');
 
   // Milling-specific fields
@@ -152,18 +156,27 @@ export default function QuoteModal({
     setLoading(true);
     setError(null);
 
-    const fullLocation = [town.trim(), county.trim()].filter(Boolean).join(', ') || 'Mwea Mill Hub';
-    const completeDeliveryLocation = deliveryDetails.trim()
-      ? `${fullLocation} (${deliveryDetails.trim()})`
-      : fullLocation;
+    const isPickup = fulfillmentType === 'pickup' && requestType !== 'other';
+    let completeDeliveryLocation: string;
+    if (isPickup) {
+      completeDeliveryLocation = `Self Pick-up at Mill (Wang'uru Highway Corridor, Mwea)${pickupDate.trim() ? ` · Est. Collection: ${pickupDate.trim()}` : ''}${pickupNotes.trim() ? ` · Vehicle: ${pickupNotes.trim()}` : ''}`;
+    } else {
+      const fullLocation = [town.trim(), county.trim()].filter(Boolean).join(', ') || 'Mwea Mill Hub';
+      completeDeliveryLocation = deliveryDetails.trim()
+        ? `${fullLocation} (${deliveryDetails.trim()})`
+        : fullLocation;
+    }
 
     const payload: Record<string, unknown> = {
       requestType,
+      fulfillmentType: requestType === 'other' ? 'delivery' : fulfillmentType,
+      pickupDate: isPickup ? pickupDate.trim() || undefined : undefined,
+      pickupNotes: isPickup ? pickupNotes.trim() || undefined : undefined,
       name: name.trim(),
       phone: phone.trim(),
       email: email.trim() || undefined,
-      county: county.trim(),
-      town: town.trim(),
+      county: isPickup ? 'Kirinyaga' : county.trim(),
+      town: isPickup ? "Wang'uru" : town.trim(),
       deliveryLocation: completeDeliveryLocation,
       customerType,
       message: message.trim() || undefined,
@@ -357,17 +370,32 @@ export default function QuoteModal({
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-black/50">Location:</span>
-                  <span className="font-medium text-[#123D2A]">{submittedQuote.deliveryLocation}</span>
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-black/50">Fulfillment:</span>
+                  <span className="font-medium text-[#123D2A] text-right">
+                    {submittedQuote.fulfillmentType === 'pickup' ? (
+                      <span className="inline-flex items-center gap-1 font-semibold text-[#123D2A]">
+                        <Store className="w-3.5 h-3.5 text-[#D4A72C]" />
+                        <span>Self Pick-up at Mill (Wang&apos;uru, Mwea)</span>
+                      </span>
+                    ) : (
+                      submittedQuote.deliveryLocation
+                    )}
+                  </span>
                 </div>
+                {submittedQuote.pickupDate && (
+                  <div className="flex justify-between">
+                    <span className="text-black/50">Pick-up Target:</span>
+                    <span className="font-semibold text-[#123D2A]">{submittedQuote.pickupDate}</span>
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <a
                   href={companyConfig.getWhatsAppLink(
                     'quote',
-                    `${submittedQuote.requestType?.toUpperCase() || 'QUOTE'}: ${submittedQuote.productName} (Ref: ${submittedQuote.referenceNumber}) for ${submittedQuote.name}`
+                    `${submittedQuote.requestType?.toUpperCase() || 'QUOTE'} [${submittedQuote.fulfillmentType === 'pickup' ? 'SELF PICK-UP' : 'DELIVERY'}]: ${submittedQuote.productName} (Ref: ${submittedQuote.referenceNumber}) for ${submittedQuote.name}`
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -790,60 +818,163 @@ export default function QuoteModal({
                   </div>
                 )}
 
-                {/* 5. Location Section (for Retail, Wholesale, Business, Milling) */}
+                {/* 5. Fulfillment & Location Section (Retail, Wholesale, Business, Milling) */}
                 {requestType !== 'other' && (
                   <div className="pt-2 border-t border-[#123D2A]/10 space-y-3">
-                    <label className="block text-xs font-semibold text-[#123D2A] uppercase tracking-wider">
-                      {requestType === 'milling' ? 'Paddy Source Location / Depot *' : 'Delivery Destination *'}
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                      <div>
-                        <label className="block text-[11px] text-black/60 font-medium mb-1">
-                          County *
-                        </label>
-                        <div className="relative">
-                          <MapPin className="w-4 h-4 text-black/40 absolute left-3 top-3" />
-                          <select
-                            value={county}
-                            onChange={(e) => setCounty(e.target.value)}
-                            className="w-full pl-9 pr-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-white border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none"
+                    <div>
+                      <label className="block text-xs font-semibold text-[#123D2A] uppercase tracking-wider mb-1.5">
+                        Fulfillment & Collection Preference *
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setFulfillmentType('delivery')}
+                          className={`flex items-center gap-3 p-3 rounded-xs border text-left transition-all min-h-[52px] cursor-pointer ${
+                            fulfillmentType === 'delivery'
+                              ? 'border-[#123D2A] bg-[#123D2A]/5 text-[#123D2A] font-semibold ring-1 ring-[#123D2A]'
+                              : 'border-[#123D2A]/20 hover:border-[#123D2A]/40 text-black/70 bg-white'
+                          }`}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                              fulfillmentType === 'delivery' ? 'bg-[#123D2A] text-[#F8F6EF]' : 'bg-black/5 text-black/60'
+                            }`}
                           >
-                            {KENYAN_COUNTIES.map((c) => (
-                              <option key={c} value={c}>
-                                {c}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
+                            <Truck className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold leading-tight">Delivery to My Location</p>
+                            <p className="text-[10px] text-black/60 mt-0.5">Dispatched to your county & town depot</p>
+                          </div>
+                        </button>
 
-                      <div>
-                        <label className="block text-[11px] text-black/60 font-medium mb-1">
-                          Town / Area / Center *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Wang'uru, Thika Road, Westlands"
-                          value={town}
-                          onChange={(e) => setTown(e.target.value)}
-                          className="w-full px-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-white border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none"
-                        />
-                      </div>
-
-                      <div className="sm:col-span-2">
-                        <label className="block text-[11px] text-black/60 font-medium mb-1">
-                          Specific Landmark or Delivery Details <span className="text-black/40 font-normal lowercase">(optional)</span>
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. Commercial Store Depot near Wang'uru Flyover, or specify preferred transport"
-                          value={deliveryDetails}
-                          onChange={(e) => setDeliveryDetails(e.target.value)}
-                          className="w-full px-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-white border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none"
-                        />
+                        <button
+                          type="button"
+                          onClick={() => setFulfillmentType('pickup')}
+                          className={`flex items-center gap-3 p-3 rounded-xs border text-left transition-all min-h-[52px] cursor-pointer ${
+                            fulfillmentType === 'pickup'
+                              ? 'border-[#D4A72C] bg-[#D4A72C]/10 text-[#123D2A] font-semibold ring-1 ring-[#D4A72C]'
+                              : 'border-[#123D2A]/20 hover:border-[#123D2A]/40 text-black/70 bg-white'
+                          }`}
+                        >
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                              fulfillmentType === 'pickup' ? 'bg-[#D4A72C] text-[#123D2A]' : 'bg-black/5 text-black/60'
+                            }`}
+                          >
+                            <Store className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold leading-tight">Self Pick-up at Mill (Mwea)</p>
+                            <p className="text-[10px] text-black/60 mt-0.5">Buyer visits mill in Wang&apos;uru directly (No delivery fee)</p>
+                          </div>
+                        </button>
                       </div>
                     </div>
+
+                    {/* Conditional: Self Pick-up Card */}
+                    {fulfillmentType === 'pickup' ? (
+                      <div className="bg-[#123D2A]/5 border border-[#D4A72C]/50 rounded-xs p-3.5 space-y-3">
+                        <div className="flex items-start gap-2.5">
+                          <MapPin className="w-4 h-4 text-[#D4A72C] shrink-0 mt-0.5" />
+                          <div className="text-xs">
+                            <p className="font-bold text-[#123D2A]">Collection Point: Top Grade Rice Millers</p>
+                            <p className="text-black/75 mt-0.5">
+                              Wang&apos;uru Commercial Hub & Highway Corridor, Mwea, Kirinyaga County, Kenya
+                            </p>
+                            <p className="text-[11px] text-[#123D2A] font-semibold mt-1">
+                              Operating Hours: <span className="text-black/70 font-normal">Mon–Fri: 7:30 AM – 5:30 PM · Sat: 8:00 AM – 2:00 PM</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[#123D2A]/15">
+                          <div>
+                            <label className="block text-[11px] text-black/70 font-semibold mb-1">
+                              Planned Pick-up Date / Timeline <span className="text-black/40 font-normal lowercase">(optional)</span>
+                            </label>
+                            <div className="relative">
+                              <Calendar className="w-4 h-4 text-black/40 absolute left-3 top-3" />
+                              <input
+                                type="text"
+                                placeholder="e.g. Tomorrow afternoon / This Saturday"
+                                value={pickupDate}
+                                onChange={(e) => setPickupDate(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-white border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] text-black/70 font-semibold mb-1">
+                              Vehicle / Transport Means <span className="text-black/40 font-normal lowercase">(optional)</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Personal car / Pickup / Probox / Canter"
+                              value={pickupNotes}
+                              onChange={(e) => setPickupNotes(e.target.value)}
+                              className="w-full px-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-white border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Conditional: Delivery Destination Form */
+                      <div className="space-y-3">
+                        <label className="block text-xs font-semibold text-[#123D2A] uppercase tracking-wider">
+                          {requestType === 'milling' ? 'Paddy Source Location / Depot *' : 'Delivery Destination *'}
+                        </label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                          <div>
+                            <label className="block text-[11px] text-black/60 font-medium mb-1">
+                              County *
+                            </label>
+                            <div className="relative">
+                              <MapPin className="w-4 h-4 text-black/40 absolute left-3 top-3" />
+                              <select
+                                value={county}
+                                onChange={(e) => setCounty(e.target.value)}
+                                className="w-full pl-9 pr-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-white border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none"
+                              >
+                                {KENYAN_COUNTIES.map((c) => (
+                                  <option key={c} value={c}>
+                                    {c}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-[11px] text-black/60 font-medium mb-1">
+                              Town / Area / Center *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="e.g. Wang'uru, Thika Road, Westlands"
+                              value={town}
+                              onChange={(e) => setTown(e.target.value)}
+                              className="w-full px-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-white border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-[11px] text-black/60 font-medium mb-1">
+                              Specific Landmark or Delivery Address <span className="text-black/40 font-normal lowercase">(optional)</span>
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Commercial Store Depot near Wang'uru Flyover, or street/estate"
+                              value={deliveryDetails}
+                              onChange={(e) => setDeliveryDetails(e.target.value)}
+                              className="w-full px-3 py-2.5 min-h-[44px] text-xs rounded-xs bg-white border border-[#123D2A]/20 focus:border-[#D4A72C] outline-none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

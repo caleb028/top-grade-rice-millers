@@ -215,6 +215,7 @@ export async function saveQuote(
   const store = getStorage();
   const newQuote: QuoteRequest = {
     requestType: input.requestType || 'wholesale',
+    fulfillmentType: input.fulfillmentType || 'delivery',
     ...input,
     id: 'quote_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
     referenceNumber: generateQuoteRef(),

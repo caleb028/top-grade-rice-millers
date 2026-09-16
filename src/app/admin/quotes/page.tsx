@@ -22,6 +22,7 @@ import {
   Cog,
   ShoppingBag,
   Truck,
+  Store,
   HelpCircle,
 } from 'lucide-react';
 
@@ -199,6 +200,9 @@ export default function AdminQuotesPage() {
       'Reference',
       'Date',
       'Request Type',
+      'Fulfillment Method',
+      'Pick-up Date',
+      'Pick-up Notes',
       'Name',
       'Organization/Company',
       'Phone',
@@ -216,6 +220,9 @@ export default function AdminQuotesPage() {
       q.referenceNumber,
       q.createdAt,
       getEffectiveType(q).toUpperCase(),
+      q.fulfillmentType === 'pickup' ? 'Self Pick-up at Mill' : 'Delivery',
+      `"${q.pickupDate || ''}"`,
+      `"${q.pickupNotes || ''}"`,
       `"${q.name}"`,
       `"${q.organization || q.company || ''}"`,
       `"${q.phone}"`,
@@ -238,6 +245,30 @@ export default function AdminQuotesPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const renderFulfillmentBadge = (q: QuoteRequest) => {
+    const isPickup = q.fulfillmentType === 'pickup';
+    if (isPickup) {
+      return (
+        <span
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-amber-50 text-amber-900 border border-amber-300 text-[10px] font-semibold rounded-xs"
+          title="Buyer visits Wang'uru mill directly to pick up"
+        >
+          <Store className="w-3 h-3 text-[#D4A72C]" />
+          <span>Pick-up</span>
+        </span>
+      );
+    }
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-medium rounded-xs"
+        title="Dispatched to client delivery address"
+      >
+        <Truck className="w-3 h-3 text-emerald-600" />
+        <span>Delivery</span>
+      </span>
+    );
   };
 
   const renderTypeBadge = (type: QuoteRequestType) => {
@@ -440,11 +471,12 @@ export default function AdminQuotesPage() {
                 className="bg-white p-4 rounded-sm border border-[#123D2A]/10 shadow-2xs space-y-3 text-xs"
               >
                 <div className="flex items-center justify-between gap-2 border-b border-black/5 pb-2.5">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center flex-wrap gap-1.5">
                     <span className="font-mono font-bold text-[#123D2A] text-sm">
                       {q.referenceNumber}
                     </span>
                     {renderTypeBadge(effType)}
+                    {renderFulfillmentBadge(q)}
                   </div>
                   {renderStatusBadge(q.status)}
                 </div>
@@ -530,10 +562,11 @@ export default function AdminQuotesPage() {
               <tr>
                 <th className="py-3 px-4">Ref #</th>
                 <th className="py-3 px-4">Type</th>
+                <th className="py-3 px-4">Fulfillment</th>
                 <th className="py-3 px-4">Customer</th>
                 <th className="py-3 px-4">Product / Service</th>
                 <th className="py-3 px-4">Quantity</th>
-                <th className="py-3 px-4">Destination</th>
+                <th className="py-3 px-4">Destination / Pickup</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Date</th>
                 <th className="py-3 px-4 text-right">Actions</th>
@@ -550,6 +583,9 @@ export default function AdminQuotesPage() {
                       </td>
                       <td className="py-3 px-4">
                         {renderTypeBadge(effType)}
+                      </td>
+                      <td className="py-3 px-4">
+                        {renderFulfillmentBadge(q)}
                       </td>
                       <td className="py-3 px-4">
                         <span className="font-semibold text-black block">{q.name}</span>
@@ -620,7 +656,7 @@ export default function AdminQuotesPage() {
                 })
               ) : (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center text-black/50">
+                  <td colSpan={10} className="py-12 text-center text-black/50">
                     {loading ? (
                       <div className="flex items-center justify-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin text-[#D4A72C]" />
@@ -660,7 +696,10 @@ export default function AdminQuotesPage() {
                       : 'Retail Quote Details'}
                   </h3>
                 </div>
-                {renderTypeBadge(getEffectiveType(activeQuoteModal))}
+                <div className="flex items-center flex-wrap gap-1.5">
+                  {renderTypeBadge(getEffectiveType(activeQuoteModal))}
+                  {renderFulfillmentBadge(activeQuoteModal)}
+                </div>
               </div>
               <button
                 onClick={() => setActiveQuoteModal(null)}
@@ -834,11 +873,29 @@ export default function AdminQuotesPage() {
                     </div>
 
                     <div className="sm:col-span-2">
-                      <span className="text-black/50 block text-[10px] uppercase font-semibold">Delivery Destination</span>
-                      <span className="font-medium text-black/80 flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-[#71856F]" />
-                        <span>{activeQuoteModal.deliveryLocation}</span>
+                      <span className="text-black/50 block text-[10px] uppercase font-semibold">
+                        {activeQuoteModal.fulfillmentType === 'pickup' ? 'Fulfillment Method & Collection Point' : 'Delivery Destination'}
                       </span>
+                      <div className="pt-0.5 space-y-1">
+                        <span className="font-medium text-black/80 flex items-center gap-1">
+                          {activeQuoteModal.fulfillmentType === 'pickup' ? (
+                            <Store className="w-3.5 h-3.5 text-[#D4A72C] shrink-0" />
+                          ) : (
+                            <MapPin className="w-3.5 h-3.5 text-[#71856F] shrink-0" />
+                          )}
+                          <span>{activeQuoteModal.deliveryLocation}</span>
+                        </span>
+                        {activeQuoteModal.fulfillmentType === 'pickup' && activeQuoteModal.pickupDate && (
+                          <p className="text-[11px] text-[#123D2A] font-medium">
+                            Target Pick-up: <span className="font-semibold">{activeQuoteModal.pickupDate}</span>
+                          </p>
+                        )}
+                        {activeQuoteModal.fulfillmentType === 'pickup' && activeQuoteModal.pickupNotes && (
+                          <p className="text-[11px] text-black/60">
+                            Vehicle / Transport: {activeQuoteModal.pickupNotes}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     {activeQuoteModal.message && (

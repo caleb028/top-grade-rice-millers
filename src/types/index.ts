@@ -46,11 +46,16 @@ export interface MillingRequestDetails {
   preferredDate?: string;
 }
 
+export type FulfillmentType = 'delivery' | 'pickup';
+
 export interface QuoteRequest {
   id: string;
   referenceNumber: string;
   createdAt: string;
   requestType?: QuoteRequestType;
+  fulfillmentType?: FulfillmentType;
+  pickupDate?: string;
+  pickupNotes?: string;
   name: string;
   company?: string;
   organization?: string;
