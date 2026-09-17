@@ -140,7 +140,7 @@ export default function AdminMessagesPage() {
   const getEmailReplyUrl = (m: ContactMessage) => {
     if (!m.email) return '#';
     const subject = `Top Grade Rice Millers — Re: ${m.subject}`;
-    const body = `Dear ${m.name},\n\nThank you for reaching out to Top Grade Rice Millers regarding "${m.subject}".\n\n\n\nKind regards,\nTop Grade Rice Millers\nWang'uru Commercial Corridor, Mwea, Kirinyaga County, Kenya\n`;
+    const body = `Dear ${m.name},\n\nThank you for reaching out to Top Grade Rice Millers regarding "${m.subject}".\n\n\n\nKind regards,\nTop Grade Rice Millers\nWang'uru Commercial Corridor, Mwea, Kirinyaga County, Kenya\nEmail: topgradericemillers009@gmail.com\n`;
     return `mailto:${m.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 

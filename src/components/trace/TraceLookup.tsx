@@ -55,23 +55,10 @@ export default function TraceLookup() {
         </button>
       </form>
 
-      <div className="mt-3 flex items-center gap-2 text-[11px] text-white/50">
-        <span>Sample test lots:</span>
-        <button
-          type="button"
-          onClick={() => setBatchCode('TGM-2026-PIS-01')}
-          className="text-[#D4A72C] underline hover:text-[#E5BC4A] font-mono"
-        >
-          TGM-2026-PIS-01
-        </button>
-        <span>·</span>
-        <button
-          type="button"
-          onClick={() => setBatchCode('TGM-2026-SLG-02')}
-          className="text-[#D4A72C] underline hover:text-[#E5BC4A] font-mono"
-        >
-          TGM-2026-SLG-02
-        </button>
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-white/60">
+        <span>Verified lot format:</span>
+        <span className="text-[#D4A72C] font-mono font-semibold">TGM-YYYY-XXX-##</span>
+        <span className="text-white/40">· Printed on your sack seal tag</span>
       </div>
     </div>
   );

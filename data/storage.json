@@ -1,43 +1,6 @@
 {
-  "quotes": [
-    {
-      "requestType": "business",
-      "fulfillmentType": "pickup",
-      "pickupDate": "2026-09-20",
-      "pickupNotes": "Vehicle KBZ 982T will arrive at Wanguru depot",
-      "name": "Sarah Kimani",
-      "company": "Realtime Grand Hotel Mwea",
-      "organization": "Realtime Grand Hotel Mwea",
-      "phone": "0712 345 678",
-      "email": "sarah.k@grandhotel.co.ke",
-      "customerType": "Hotel / Hospitality",
-      "productId": "pure-pishori-50kg",
-      "productName": "Pure Pishori Rice Grade 1 (50kg)",
-      "quantityBags": 45,
-      "quantity": 45,
-      "unit": "Bags (50kg)",
-      "bagSize": "50kg",
-      "deliveryLocation": "Self Pick-up at Mill (Wang'uru Highway Corridor, Mwea)",
-      "county": "Kirinyaga",
-      "town": "Wang'uru",
-      "id": "quote_1789567436221_s9ale",
-      "referenceNumber": "TG-QR-2026-6868",
-      "createdAt": "2026-09-16T14:03:56.221Z",
-      "status": "Pending"
-    }
-  ],
-  "contacts": [
-    {
-      "name": "David Mwangi",
-      "phone": "0722 998 877",
-      "email": "david@agritrade.co.ke",
-      "subject": "Bulk Milling Schedule Inquiry",
-      "message": "Hello, checking if live message stream captures this instantly without refresh.",
-      "id": "msg_1789567436257_p5wwz",
-      "createdAt": "2026-09-16T14:03:56.257Z",
-      "status": "New"
-    }
-  ],
+  "quotes": [],
+  "contacts": [],
   "products": [
     {
       "id": "mwea-pure-pishori",
@@ -225,9 +188,10 @@
     "name": "TOP GRADE RICE MILLERS",
     "shortName": "Top Grade",
     "acronym": "TGM",
-    "tagline": "Premium Rice. Proudly Milled in Mwea.",
+    "slogan": "Home of Pure Pishori",
+    "tagline": "Home of Pure Pishori — Premium Rice Proudly Milled in Mwea",
     "subheadline": "Quality-focused rice milling and processing from the heart of Mwea, serving households, businesses and institutions across Kenya.",
-    "positioning": "Premium Rice. Proudly Milled in Mwea.",
+    "positioning": "Home of Pure Pishori — Premium Rice Proudly Milled in Mwea",
     "location": {
       "town": "Mwea",
       "subCounty": "Mwea East / West",
@@ -247,8 +211,8 @@
       "phoneRaw": "+254722251484",
       "whatsappNumber": "254722251484",
       "whatsappDisplay": "+254 722 251 484",
-      "email": "info@topgradericemillers.co.ke",
-      "salesEmail": "wholesale@topgradericemillers.co.ke",
+      "email": "topgradericemillers009@gmail.com",
+      "salesEmail": "topgradericemillers009@gmail.com",
       "businessHours": [
         {
           "days": "Monday – Friday",

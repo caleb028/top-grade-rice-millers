@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { companyConfig } from '@/data/companyConfig';
-import { Menu, X, ArrowUpRight, MessageSquare } from 'lucide-react';
+import { Menu, X, ArrowUpRight, MessageSquare, Mail } from 'lucide-react';
 
 interface NavbarProps {
   onOpenQuoteModal?: () => void;
@@ -260,6 +260,14 @@ export default function Navbar({ onOpenQuoteModal }: NavbarProps) {
                 >
                   <MessageSquare className="w-4 h-4 text-[#25D366]" />
                   <span>Chat on WhatsApp</span>
+                </a>
+
+                <a
+                  href={`mailto:${companyConfig.contact.email}?subject=${encodeURIComponent('Enquiry — Top Grade Rice Millers')}`}
+                  className="w-full min-h-[44px] flex items-center justify-center gap-2 border border-white/20 bg-white/5 hover:bg-white/10 text-[#F8F6EF] py-3 rounded-xs text-xs font-semibold hover:border-[#D4A72C] transition-colors"
+                >
+                  <Mail className="w-4 h-4 text-[#D4A72C]" />
+                  <span className="truncate">Email: {companyConfig.contact.email}</span>
                 </a>
 
                 <div className="text-center text-[11px] text-white/50 pt-1">

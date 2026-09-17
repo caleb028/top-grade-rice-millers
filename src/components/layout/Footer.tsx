@@ -127,12 +127,14 @@ export default function Footer() {
               </div>
 
               <div>
-                <span className="block text-xs text-white/50 mb-0.5">Wholesale Enquiries</span>
+                <span className="block text-xs text-white/50 mb-0.5">Official Company Email</span>
                 <a
-                  href={`mailto:${company.contact.salesEmail}`}
-                  className="hover:text-[#D4A72C] font-medium transition-colors"
+                  href={`mailto:${company.contact.email}?subject=${encodeURIComponent('Enquiry — Top Grade Rice Millers')}`}
+                  className="hover:text-[#D4A72C] font-medium transition-colors break-all flex items-center gap-1.5 group"
+                  title="Click to compose an email"
                 >
-                  {company.contact.salesEmail}
+                  <span className="underline decoration-[#D4A72C]/40 underline-offset-2">{company.contact.email}</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-[#D4A72C] opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </a>
               </div>
 

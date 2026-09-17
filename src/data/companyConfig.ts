@@ -37,8 +37,8 @@ export const companyConfig = {
     // WhatsApp direct number (E.164 format without plus or symbols for wa.me)
     whatsappNumber: '254722251484',
     whatsappDisplay: '+254 722 251 484',
-    email: 'info@topgradericemillers.co.ke',
-    salesEmail: 'wholesale@topgradericemillers.co.ke',
+    email: 'topgradericemillers009@gmail.com',
+    salesEmail: 'topgradericemillers009@gmail.com',
     businessHours: [
       { days: 'Monday – Friday', hours: '7:30 AM – 5:30 PM' },
       { days: 'Saturday', hours: '8:00 AM – 2:00 PM' },

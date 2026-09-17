@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { companyConfig } from '@/data/companyConfig';
-import { MapPin, Phone, Mail, MessageSquare, Clock, ArrowRight, CheckCircle2, AlertCircle, Loader2, ExternalLink, Navigation } from 'lucide-react';
+import { MapPin, Phone, Mail, MessageSquare, Clock, ArrowRight, ArrowUpRight, CheckCircle2, AlertCircle, Loader2, ExternalLink, Navigation } from 'lucide-react';
 
 export default function ContactSection() {
   const [company, setCompany] = useState(companyConfig);
@@ -159,19 +159,24 @@ export default function ContactSection() {
                 </div>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-xs uppercase tracking-wider font-semibold text-[#123D2A]">
                   <Mail className="w-4 h-4 text-[#D4A72C]" />
-                  <span>Electronic Mail</span>
+                  <span>Official Email</span>
                 </div>
-                <p className="text-xs sm:text-sm text-[#17211C]/80 font-sans">
-                  <a href={`mailto:${company.contact.email}`} className="hover:text-[#D4A72C] transition-colors block">
-                    {company.contact.email}
+                <div className="text-xs sm:text-sm font-sans space-y-1">
+                  <a
+                    href={`mailto:${company.contact.email}?subject=${encodeURIComponent('Enquiry — Top Grade Rice Millers')}`}
+                    className="inline-flex items-center gap-2 text-[#123D2A] hover:text-[#D4A72C] font-semibold break-all transition-colors group"
+                    title="Click to compose an email"
+                  >
+                    <span className="underline decoration-[#D4A72C]/50 underline-offset-2">{company.contact.email}</span>
+                    <ArrowUpRight className="w-3.5 h-3.5 text-[#D4A72C] shrink-0 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                   </a>
-                  <a href={`mailto:${company.contact.salesEmail}`} className="hover:text-[#D4A72C] transition-colors block text-black/60 text-xs">
-                    {company.contact.salesEmail}
-                  </a>
-                </p>
+                  <p className="text-[11px] text-black/50">
+                    Direct inquiries & official correspondence (tap to write)
+                  </p>
+                </div>
               </div>
 
               <div className="space-y-1">
