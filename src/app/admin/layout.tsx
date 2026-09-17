@@ -100,7 +100,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     const fetchStats = async () => {
       try {
-        const statsRes = await fetch('/api/admin/stats');
+        const statsRes = await fetch('/api/admin/stats', { cache: 'no-store' });
         if (!statsRes.ok) return;
         const statsData = await statsRes.json();
         if (statsData.success && statsData.stats) {
@@ -118,26 +118,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       fetchStats();
     };
 
-    // Polling heartbeat every 5s when page visible
-    const interval = setInterval(() => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        fetchStats();
-      }
-    }, 5000);
-
-    const handleVisibilityChange = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        fetchStats();
-      }
-    };
-
     window.addEventListener('tgrm_stats_refresh', handleRefresh);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      clearInterval(interval);
       window.removeEventListener('tgrm_stats_refresh', handleRefresh);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [isLoginPage]);
 

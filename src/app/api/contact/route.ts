@@ -16,6 +16,9 @@ import {
 } from '@/lib/validation';
 import { logSecurityEvent } from '@/lib/securityLogger';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const VALID_STATUSES: ContactMessage['status'][] = ['New', 'Read', 'Replied'];
 
 export async function POST(req: NextRequest) {
@@ -125,7 +128,14 @@ export async function GET(req: NextRequest) {
 
   try {
     const messages = await getContactMessages();
-    return NextResponse.json({ success: true, count: messages.length, messages });
+    return NextResponse.json(
+      { success: true, count: messages.length, messages },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (error) {
     console.error('Error fetching contact messages:', error);
     return NextResponse.json(

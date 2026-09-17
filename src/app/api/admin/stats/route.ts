@@ -4,6 +4,9 @@ import { requireAdminSession } from '@/lib/auth';
 import { logSecurityEvent } from '@/lib/securityLogger';
 import { getClientIp } from '@/lib/rateLimit';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: NextRequest) {
   const session = await requireAdminSession(req);
   if (!session) {
@@ -20,7 +23,14 @@ export async function GET(req: NextRequest) {
 
   try {
     const stats = await getAdminDashboardStats();
-    return NextResponse.json({ success: true, stats });
+    return NextResponse.json(
+      { success: true, stats },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (error) {
     console.error('Stats error:', error);
     return NextResponse.json(

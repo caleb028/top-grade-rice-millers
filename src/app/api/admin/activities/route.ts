@@ -1,8 +1,11 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getLiveActivities, getAdminDashboardStats } from '@/lib/db';
 import { requireAdminSession } from '@/lib/auth';
 import { logSecurityEvent } from '@/lib/securityLogger';
 import { getClientIp } from '@/lib/rateLimit';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   const session = await requireAdminSession(req);
@@ -26,12 +29,19 @@ export async function GET(req: NextRequest) {
       getAdminDashboardStats(),
     ]);
 
-    return NextResponse.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      activities,
-      stats,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        timestamp: new Date().toISOString(),
+        activities,
+        stats,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (error) {
     console.error('Activities error:', error);
     return NextResponse.json(

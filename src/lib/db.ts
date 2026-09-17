@@ -24,6 +24,22 @@ interface StorageSchema {
   settings: AdminSettings;
 }
 
+declare global {
+  // eslint-disable-next-line no-var
+  var __tgrm_storage: StorageSchema | undefined;
+  // eslint-disable-next-line no-var
+  var __tgrm_deleted_quote_ids: Set<string> | undefined;
+  // eslint-disable-next-line no-var
+  var __tgrm_deleted_msg_ids: Set<string> | undefined;
+}
+
+if (!globalThis.__tgrm_deleted_quote_ids) {
+  globalThis.__tgrm_deleted_quote_ids = new Set<string>();
+}
+if (!globalThis.__tgrm_deleted_msg_ids) {
+  globalThis.__tgrm_deleted_msg_ids = new Set<string>();
+}
+
 const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 const LOCAL_DATA_DIR = path.join(process.cwd(), 'data');
 const SEED_FILE = path.join(LOCAL_DATA_DIR, 'storage.json');
@@ -80,6 +96,9 @@ const defaultSettings: AdminSettings = {
 };
 
 function getStorage(): StorageSchema {
+  const memStore = globalThis.__tgrm_storage;
+  let diskStore: Partial<StorageSchema> | null = null;
+
   try {
     if (!fs.existsSync(DATA_DIR)) {
       try {
@@ -89,115 +108,151 @@ function getStorage(): StorageSchema {
       }
     }
 
-    if (!fs.existsSync(DATA_FILE)) {
-      let initial: StorageSchema;
-      // In serverless, try to seed from the bundled repository data file first
-      if (fs.existsSync(SEED_FILE)) {
-        try {
-          const rawSeed = fs.readFileSync(SEED_FILE, 'utf-8');
-          initial = JSON.parse(rawSeed) as StorageSchema;
-        } catch {
-          initial = {
-            quotes: [],
-            contacts: [],
-            products: productsList.map((p) => ({ ...p, active: true })),
-            services: millingServicesList,
-            gallery: defaultGallery,
-            company: companyConfig as CompanyInfo,
-            settings: defaultSettings,
-          };
-        }
-      } else {
-        initial = {
-          quotes: [],
-          contacts: [],
-          products: productsList.map((p) => ({ ...p, active: true })),
-          services: millingServicesList,
-          gallery: defaultGallery,
-          company: companyConfig as CompanyInfo,
-          settings: defaultSettings,
-        };
+    if (fs.existsSync(DATA_FILE)) {
+      const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+      if (raw && raw.trim().length > 0) {
+        diskStore = JSON.parse(raw) as Partial<StorageSchema>;
       }
-
-      try {
-        fs.writeFileSync(DATA_FILE, JSON.stringify(initial, null, 2), 'utf-8');
-      } catch (err) {
-        console.warn('Could not write initial DATA_FILE:', err);
+    } else if (fs.existsSync(SEED_FILE)) {
+      const rawSeed = fs.readFileSync(SEED_FILE, 'utf-8');
+      if (rawSeed && rawSeed.trim().length > 0) {
+        diskStore = JSON.parse(rawSeed) as Partial<StorageSchema>;
       }
-      return initial;
     }
-
-    const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-    const parsed = JSON.parse(raw) as Partial<StorageSchema>;
-
-    let hasChanges = false;
-
-    if (!Array.isArray(parsed.quotes)) {
-      parsed.quotes = [];
-      hasChanges = true;
-    }
-    if (!Array.isArray(parsed.contacts)) {
-      parsed.contacts = [];
-      hasChanges = true;
-    }
-    if (!Array.isArray(parsed.products) || parsed.products.length === 0) {
-      parsed.products = productsList.map((p) => ({ ...p, active: true }));
-      hasChanges = true;
-    }
-    if (!Array.isArray(parsed.services) || parsed.services.length === 0) {
-      parsed.services = millingServicesList;
-      hasChanges = true;
-    }
-    if (!Array.isArray(parsed.gallery) || parsed.gallery.length === 0) {
-      parsed.gallery = defaultGallery;
-      hasChanges = true;
-    }
-    if (!parsed.company) {
-      parsed.company = companyConfig as CompanyInfo;
-      hasChanges = true;
-    }
-    if (!parsed.settings) {
-      parsed.settings = defaultSettings;
-      hasChanges = true;
-    }
-
-    const complete = parsed as StorageSchema;
-    if (hasChanges) {
-      writeStorage(complete);
-    }
-    return complete;
-  } catch (error) {
-    console.error('Failed to read storage:', error);
-    return {
-      quotes: [],
-      contacts: [],
-      products: productsList.map((p) => ({ ...p, active: true })),
-      services: millingServicesList,
-      gallery: defaultGallery,
-      company: companyConfig as CompanyInfo,
-      settings: defaultSettings,
-    };
+  } catch (err) {
+    console.warn('Storage read warning (will fall back safely to memory cache):', err);
   }
+
+  const defaultStore: StorageSchema = {
+    quotes: [],
+    contacts: [],
+    products: productsList.map((p) => ({ ...p, active: true })),
+    services: millingServicesList,
+    gallery: defaultGallery,
+    company: companyConfig as CompanyInfo,
+    settings: defaultSettings,
+  };
+
+  if (!memStore && !diskStore) {
+    globalThis.__tgrm_storage = defaultStore;
+    writeStorage(defaultStore);
+    return defaultStore;
+  }
+
+  const deletedQuotes = globalThis.__tgrm_deleted_quote_ids || new Set<string>();
+  const deletedContacts = globalThis.__tgrm_deleted_msg_ids || new Set<string>();
+
+  // Safe merge for quotes: union by id, excluding deleted
+  const quotesMap = new Map<string, QuoteRequest>();
+  if (diskStore && Array.isArray(diskStore.quotes)) {
+    for (const q of diskStore.quotes) {
+      if (q && q.id && !deletedQuotes.has(q.id) && (!q.referenceNumber || !deletedQuotes.has(q.referenceNumber))) {
+        quotesMap.set(q.id, q);
+      }
+    }
+  }
+  if (memStore && Array.isArray(memStore.quotes)) {
+    for (const q of memStore.quotes) {
+      if (q && q.id && !deletedQuotes.has(q.id) && (!q.referenceNumber || !deletedQuotes.has(q.referenceNumber))) {
+        quotesMap.set(q.id, q);
+      }
+    }
+  }
+
+  // Safe merge for contacts: union by id, excluding deleted
+  const contactsMap = new Map<string, ContactMessage>();
+  if (diskStore && Array.isArray(diskStore.contacts)) {
+    for (const c of diskStore.contacts) {
+      if (c && c.id && !deletedContacts.has(c.id)) {
+        contactsMap.set(c.id, c);
+      }
+    }
+  }
+  if (memStore && Array.isArray(memStore.contacts)) {
+    for (const c of memStore.contacts) {
+      if (c && c.id && !deletedContacts.has(c.id)) {
+        contactsMap.set(c.id, c);
+      }
+    }
+  }
+
+  const products = (diskStore?.products && Array.isArray(diskStore.products) && diskStore.products.length > 0)
+    ? diskStore.products
+    : (memStore?.products && Array.isArray(memStore.products) && memStore.products.length > 0)
+    ? memStore.products
+    : defaultStore.products;
+
+  const services = (diskStore?.services && Array.isArray(diskStore.services) && diskStore.services.length > 0)
+    ? diskStore.services
+    : (memStore?.services && Array.isArray(memStore.services) && memStore.services.length > 0)
+    ? memStore.services
+    : defaultStore.services;
+
+  const gallery = (diskStore?.gallery && Array.isArray(diskStore.gallery) && diskStore.gallery.length > 0)
+    ? diskStore.gallery
+    : (memStore?.gallery && Array.isArray(memStore.gallery) && memStore.gallery.length > 0)
+    ? memStore.gallery
+    : defaultStore.gallery;
+
+  const company = diskStore?.company || memStore?.company || defaultStore.company;
+  const settings = diskStore?.settings || memStore?.settings || defaultStore.settings;
+
+  const sortedQuotes = Array.from(quotesMap.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  const sortedContacts = Array.from(contactsMap.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  const merged: StorageSchema = {
+    quotes: sortedQuotes,
+    contacts: sortedContacts,
+    products,
+    services,
+    gallery,
+    company,
+    settings,
+  };
+
+  globalThis.__tgrm_storage = merged;
+  return merged;
 }
 
 function writeStorage(data: StorageSchema): void {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Failed to write storage:', error);
-    // Fallback: try writing to /tmp/tgrm_data if running on serverless
+  // Update in-memory singleton immediately
+  globalThis.__tgrm_storage = data;
+
+  const serialized = JSON.stringify(data, null, 2);
+
+  const safeAtomicWrite = (targetPath: string) => {
     try {
-      const fallbackDir = path.join('/tmp', 'tgrm_data');
-      if (!fs.existsSync(fallbackDir)) {
-        fs.mkdirSync(fallbackDir, { recursive: true });
+      const dir = path.dirname(targetPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
       }
-      fs.writeFileSync(path.join(fallbackDir, 'storage.json'), JSON.stringify(data, null, 2), 'utf-8');
-    } catch (fallbackError) {
-      console.error('Fallback storage write also failed:', fallbackError);
+      const tmpFile = `${targetPath}.tmp.${Date.now()}.${Math.random().toString(36).substring(2, 7)}`;
+      fs.writeFileSync(tmpFile, serialized, 'utf-8');
+      try {
+        fs.renameSync(tmpFile, targetPath);
+      } catch {
+        fs.copyFileSync(tmpFile, targetPath);
+        try {
+          fs.unlinkSync(tmpFile);
+        } catch {
+          // ignore tmp unlink error
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to atomically write storage to ${targetPath}:`, err);
     }
+  };
+
+  // Primary persistent file
+  safeAtomicWrite(DATA_FILE);
+
+  // Keep workspace seed file synchronized if running locally
+  if (DATA_FILE !== SEED_FILE && fs.existsSync(path.dirname(SEED_FILE))) {
+    safeAtomicWrite(SEED_FILE);
   }
 }
 
@@ -223,6 +278,11 @@ export async function saveQuote(
     createdAt: new Date().toISOString(),
     status: 'Pending',
   };
+
+  if (globalThis.__tgrm_deleted_quote_ids) {
+    globalThis.__tgrm_deleted_quote_ids.delete(newQuote.id);
+    globalThis.__tgrm_deleted_quote_ids.delete(newQuote.referenceNumber);
+  }
 
   store.quotes.unshift(newQuote);
   writeStorage(store);
@@ -251,6 +311,20 @@ export async function updateQuoteStatus(
 export async function deleteQuote(id: string): Promise<boolean> {
   const store = getStorage();
   const initialLength = store.quotes.length;
+
+  if (!globalThis.__tgrm_deleted_quote_ids) {
+    globalThis.__tgrm_deleted_quote_ids = new Set<string>();
+  }
+  globalThis.__tgrm_deleted_quote_ids.add(id);
+
+  const targetQuote = store.quotes.find((q) => q.id === id || q.referenceNumber === id);
+  if (targetQuote) {
+    globalThis.__tgrm_deleted_quote_ids.add(targetQuote.id);
+    if (targetQuote.referenceNumber) {
+      globalThis.__tgrm_deleted_quote_ids.add(targetQuote.referenceNumber);
+    }
+  }
+
   store.quotes = store.quotes.filter((q) => q.id !== id && q.referenceNumber !== id);
   if (store.quotes.length !== initialLength) {
     writeStorage(store);
@@ -272,6 +346,10 @@ export async function saveContactMessage(
     createdAt: new Date().toISOString(),
     status: 'New',
   };
+
+  if (globalThis.__tgrm_deleted_msg_ids) {
+    globalThis.__tgrm_deleted_msg_ids.delete(newMessage.id);
+  }
 
   store.contacts.unshift(newMessage);
   writeStorage(store);
@@ -300,6 +378,12 @@ export async function updateContactStatus(
 export async function deleteContactMessage(id: string): Promise<boolean> {
   const store = getStorage();
   const initialLength = store.contacts.length;
+
+  if (!globalThis.__tgrm_deleted_msg_ids) {
+    globalThis.__tgrm_deleted_msg_ids = new Set<string>();
+  }
+  globalThis.__tgrm_deleted_msg_ids.add(id);
+
   store.contacts = store.contacts.filter((m) => m.id !== id);
   if (store.contacts.length !== initialLength) {
     writeStorage(store);

@@ -12,6 +12,9 @@ import {
 } from '@/lib/validation';
 import { logSecurityEvent } from '@/lib/securityLogger';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const VALID_STATUSES: QuoteRequest['status'][] = [
   'Pending',
   'Contacted',
@@ -251,7 +254,14 @@ export async function GET(req: NextRequest) {
 
   try {
     const quotes = await getQuotes();
-    return NextResponse.json({ success: true, count: quotes.length, quotes });
+    return NextResponse.json(
+      { success: true, count: quotes.length, quotes },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
   } catch (error) {
     console.error('Error fetching quotes:', error);
     return NextResponse.json(

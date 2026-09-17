@@ -24,9 +24,6 @@ import {
   Truck,
   Store,
   HelpCircle,
-  Play,
-  Pause,
-  Radio,
 } from 'lucide-react';
 
 export default function AdminQuotesPage() {
@@ -36,11 +33,7 @@ export default function AdminQuotesPage() {
   const [requestTypeFilter, setRequestTypeFilter] = useState<'all' | QuoteRequestType>('all');
   const [statusFilter, setStatusFilter] = useState('All');
 
-  // Live polling state
-  const [isLiveActive, setIsLiveActive] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
-  const initialLoadDoneRef = useRef(false);
-  const knownQuoteIdsRef = useRef<Set<string>>(new Set());
 
   // Deletion modal state
   const [quoteToDelete, setQuoteToDelete] = useState<QuoteRequest | null>(null);
@@ -81,34 +74,16 @@ export default function AdminQuotesPage() {
     }
   };
 
-  const fetchQuotes = async (isBackground = false) => {
-    if (!isBackground) {
-      setLoading(true);
-    }
+  const fetchQuotes = async () => {
+    setLoading(true);
     try {
-      const res = await fetch('/api/quotes');
+      const res = await fetch('/api/quotes', { cache: 'no-store' });
       const data = await res.json();
       if (data.success) {
         const fetched: QuoteRequest[] = data.quotes || [];
-
-        // Detect new quotes in background
-        if (isBackground && initialLoadDoneRef.current && knownQuoteIdsRef.current.size > 0) {
-          const brandNew = fetched.filter((q) => !knownQuoteIdsRef.current.has(q.id));
-          if (brandNew.length > 0) {
-            const first = brandNew[0];
-            setToastMessage(`🔔 New quote request received: ${first.referenceNumber} (${first.name})`);
-            setTimeout(() => setToastMessage(null), 5000);
-
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('tgrm_stats_refresh'));
-            }
-          }
-        }
-
-        knownQuoteIdsRef.current = new Set(fetched.map((q) => q.id));
         setQuotes(fetched);
 
-        // Keep open modal in sync with any background updates
+        // Keep open modal in sync if open
         if (activeQuoteModal) {
           const updatedActive = fetched.find((q) => q.id === activeQuoteModal.id);
           if (updatedActive) {
@@ -117,45 +92,27 @@ export default function AdminQuotesPage() {
         }
 
         setLastSyncTime(new Date());
-        initialLoadDoneRef.current = true;
       }
     } catch (e) {
       console.error('Failed to load quotes:', e);
     } finally {
-      if (!isBackground) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchQuotes(false);
-
-    const interval = setInterval(() => {
-      if (isLiveActive && typeof document !== 'undefined' && document.visibilityState === 'visible') {
-        fetchQuotes(true);
-      }
-    }, 4500);
-
-    const handleVisibility = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && isLiveActive) {
-        fetchQuotes(true);
-      }
-    };
+    fetchQuotes();
 
     const handleExternalRefresh = () => {
-      fetchQuotes(true);
+      fetchQuotes();
     };
 
-    document.addEventListener('visibilitychange', handleVisibility);
     window.addEventListener('tgrm_stats_refresh', handleExternalRefresh);
 
     return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('tgrm_stats_refresh', handleExternalRefresh);
     };
-  }, [isLiveActive, activeQuoteModal?.id]);
+  }, []);
 
   useEffect(() => {
     if (activeQuoteModal || quoteToDelete) {
@@ -442,25 +399,9 @@ export default function AdminQuotesPage() {
       {/* Header & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#123D2A]/10 pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#123D2A]">
-              Quote Requests & Inquiries
-            </h1>
-            {isLiveActive ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-800 tracking-wider uppercase shadow-2xs">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
-                </span>
-                <span>Live Active</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-semibold text-amber-800 tracking-wider uppercase">
-                <span className="w-2 h-2 rounded-full bg-amber-500" />
-                <span>Live Paused</span>
-              </span>
-            )}
-          </div>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#123D2A]">
+            Quote Requests & Inquiries
+          </h1>
           <p className="text-xs text-black/60 mt-1">
             Universal quotation queue: Retail, Wholesale, Business supply, and Rice Milling requests. ({quotes.length} total)
           </p>
@@ -468,27 +409,14 @@ export default function AdminQuotesPage() {
 
         <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto text-xs">
           <span className="text-[11px] text-black/50 font-mono hidden md:inline">
-            Synced: {lastSyncTime.toLocaleTimeString('en-GB')}
+            Updated: {lastSyncTime.toLocaleTimeString('en-GB')}
           </span>
 
           <button
-            type="button"
-            onClick={() => setIsLiveActive(!isLiveActive)}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 border text-xs font-medium rounded-xs transition-colors cursor-pointer ${
-              isLiveActive
-                ? 'bg-white border-[#123D2A]/15 text-[#123D2A] hover:bg-black/5'
-                : 'bg-[#123D2A] border-[#123D2A] text-white hover:bg-[#184D35]'
-            }`}
-            title={isLiveActive ? 'Pause real-time background updates' : 'Resume real-time background updates'}
-          >
-            {isLiveActive ? <Pause className="w-3.5 h-3.5 text-black/60" /> : <Play className="w-3.5 h-3.5 text-[#D4A72C]" />}
-            <span>{isLiveActive ? 'Pause Live' : 'Resume Live'}</span>
-          </button>
-
-          <button
-            onClick={() => fetchQuotes(false)}
+            onClick={() => fetchQuotes()}
             disabled={loading}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-[#123D2A]/15 text-xs font-medium rounded-xs hover:bg-[#F8F6EF] transition-colors cursor-pointer"
+            title="Refresh quotation records"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#D4A72C]' : ''}`} />
             <span>Refresh</span>
