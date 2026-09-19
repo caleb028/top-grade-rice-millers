@@ -118,10 +118,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       fetchStats();
     };
 
+    // Real-time polling heartbeat when tab is active
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchStats();
+      }
+    }, 5500);
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchStats();
+      }
+    };
+
     window.addEventListener('tgrm_stats_refresh', handleRefresh);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      clearInterval(interval);
       window.removeEventListener('tgrm_stats_refresh', handleRefresh);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [isLoginPage]);
 

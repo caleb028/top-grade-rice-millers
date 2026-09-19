@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package,
   FileText,
@@ -16,9 +16,14 @@ import {
   CheckCircle2,
   Calendar,
   Activity,
+  Radio,
+  Play,
+  Pause,
   Bell,
   ExternalLink,
+  X,
   MapPin,
+  Sparkles,
   Store,
   Truck,
 } from 'lucide-react';
@@ -60,10 +65,18 @@ export default function AdminDashboardPage() {
   const [recentQuotes, setRecentQuotes] = useState<QuoteRequest[]>([]);
   const [recentMessages, setRecentMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLiveActive, setIsLiveActive] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
+  const [newActivityIds, setNewActivityIds] = useState<Set<string>>(new Set());
+  const [liveToast, setLiveToast] = useState<{ id: string; title: string; subtitle: string; link: string } | null>(null);
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
+  const initialLoadDoneRef = useRef(false);
+  const latestActivityIdRef = useRef<string | null>(null);
+
+  const fetchDashboardData = async (isBackground = false) => {
+    if (!isBackground) {
+      setLoading(true);
+    }
     try {
       const [activitiesRes, quotesRes, messagesRes] = await Promise.all([
         fetch('/api/admin/activities?limit=15', { cache: 'no-store' }),
@@ -78,9 +91,36 @@ export default function AdminDashboardPage() {
       ]);
 
       if (activitiesData.success) {
-        setActivities(activitiesData.activities || []);
+        const fetchedActivities: LiveActivityItem[] = activitiesData.activities || [];
+        setActivities(fetchedActivities);
         if (activitiesData.stats) {
           setStats(activitiesData.stats);
+        }
+
+        // Detect new real-time items if this is a background live poll
+        if (fetchedActivities.length > 0) {
+          const newest = fetchedActivities[0];
+          if (initialLoadDoneRef.current && latestActivityIdRef.current && newest.id !== latestActivityIdRef.current) {
+            // A genuine real-world activity arrived live!
+            setNewActivityIds((prev) => new Set([...prev, newest.id]));
+            setLiveToast({
+              id: newest.id,
+              title: newest.type === 'quote' ? `🔔 New Quote Received: ${newest.sender}` : `🔔 New Direct Message from ${newest.sender}`,
+              subtitle: newest.details,
+              link: newest.link,
+            });
+
+            // Auto-hide toast after 7s
+            setTimeout(() => {
+              setLiveToast((current) => (current?.id === newest.id ? null : current));
+            }, 7000);
+
+            // Also dispatch global sync event for sidebar badges
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('tgrm_stats_refresh'));
+            }
+          }
+          latestActivityIdRef.current = newest.id;
         }
       }
 
@@ -92,26 +132,46 @@ export default function AdminDashboardPage() {
       }
 
       setLastSyncTime(new Date());
+      initialLoadDoneRef.current = true;
     } catch (e) {
-      console.error('Failed to sync dashboard data:', e);
+      console.error('Failed to sync live dashboard data:', e);
     } finally {
-      setLoading(false);
+      if (!isBackground) {
+        setLoading(false);
+      }
     }
   };
 
+  // Initial fetch and real-time polling heartbeat
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardData(false);
 
-    const handleExternalRefresh = () => {
-      fetchDashboardData();
+    // Poll every 4.5 seconds when tab is active and live is enabled
+    const pollInterval = setInterval(() => {
+      if (isLiveActive && typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchDashboardData(true);
+      }
+    }, 4500);
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && isLiveActive) {
+        fetchDashboardData(true);
+      }
     };
 
+    const handleExternalRefresh = () => {
+      fetchDashboardData(true);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('tgrm_stats_refresh', handleExternalRefresh);
 
     return () => {
+      clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('tgrm_stats_refresh', handleExternalRefresh);
     };
-  }, []);
+  }, [isLiveActive]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -153,7 +213,55 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8 relative">
-      {/* Top Header & Refresh Control */}
+      {/* Real-Time Live Floating Alert Toast */}
+      <AnimatePresence>
+        {liveToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-50 max-w-sm w-full bg-[#123D2A] text-white p-4 rounded-sm shadow-2xl border-2 border-[#D4A72C] flex items-start gap-3"
+          >
+            <div className="w-8 h-8 rounded-full bg-[#D4A72C] text-[#123D2A] flex items-center justify-center shrink-0 mt-0.5">
+              <Radio className="w-4 h-4 animate-pulse" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-serif text-xs font-bold text-[#F8F6EF]">
+                {liveToast.title}
+              </h4>
+              <p className="text-[11px] text-white/80 line-clamp-2 mt-0.5">
+                {liveToast.subtitle}
+              </p>
+              <div className="pt-2 flex items-center gap-3">
+                <Link
+                  href={liveToast.link}
+                  onClick={() => setLiveToast(null)}
+                  className="text-[11px] font-semibold text-[#D4A72C] hover:underline flex items-center gap-1"
+                >
+                  <span>Open Now</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setLiveToast(null)}
+                  className="text-[11px] text-white/50 hover:text-white cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLiveToast(null)}
+              className="text-white/40 hover:text-white cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Top Header & Live Stream Controls */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -161,26 +269,65 @@ export default function AdminDashboardPage() {
         className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#123D2A]/10 pb-5"
       >
         <div>
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#123D2A]">
-            Dashboard
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#123D2A]">
+              Dashboard
+            </h1>
+            {isLiveActive ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-bold text-emerald-800 tracking-wider uppercase shadow-2xs">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
+                </span>
+                <span>Live Real-Time Feed</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-[10px] font-semibold text-amber-800 tracking-wider uppercase">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span>Live Feed Paused</span>
+              </span>
+            )}
+          </div>
           <p className="text-xs text-black/60 mt-1">
-            Administrative operations center for Top Grade Rice Millers. All quotes and messages are stored persistently.
+            Real-time operations center for Top Grade Rice Millers. Inbound requests appear automatically without refreshing.
           </p>
         </div>
 
-        {/* Controls Bar */}
+        {/* Live Controls Bar */}
         <div className="flex flex-wrap items-center gap-2.5 self-start md:self-auto text-xs">
           <span className="text-[11px] text-black/50 font-mono hidden sm:inline">
-            Updated: {lastSyncTime.toLocaleTimeString('en-GB')}
+            Synced: {lastSyncTime.toLocaleTimeString('en-GB')}
           </span>
 
           <button
             type="button"
-            onClick={() => fetchDashboardData()}
+            onClick={() => setIsLiveActive(!isLiveActive)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xs border text-xs font-medium transition-colors cursor-pointer ${
+              isLiveActive
+                ? 'bg-white border-[#123D2A]/15 text-[#123D2A] hover:bg-black/5'
+                : 'bg-[#123D2A] border-[#123D2A] text-white hover:bg-[#184D35]'
+            }`}
+            title={isLiveActive ? 'Pause real-time background updates' : 'Resume real-time background updates'}
+          >
+            {isLiveActive ? (
+              <>
+                <Pause className="w-3.5 h-3.5 text-black/60" />
+                <span>Pause Live</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-3.5 h-3.5 text-[#D4A72C]" />
+                <span>Resume Live</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => fetchDashboardData(false)}
             disabled={loading}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-[#123D2A]/15 text-xs font-medium rounded-xs hover:bg-[#F8F6EF] text-[#123D2A] transition-colors cursor-pointer"
-            title="Refresh dashboard records"
+            title="Force immediate refresh"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-[#D4A72C]' : ''}`} />
             <span>Refresh</span>
@@ -377,23 +524,36 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-2">
                 <Activity className="w-4 h-4 text-[#123D2A]" />
                 <h3 className="font-serif text-base font-bold text-[#123D2A]">
-                  Recent Activity Stream
+                  Live Activity Stream
                 </h3>
+                {isLiveActive && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Live real-time feed is active" />
+                )}
               </div>
               <span className="text-[11px] text-black/50 font-mono">
-                Persistent Activity Log
+                Real-time updates
               </span>
             </div>
 
             <div className="divide-y divide-black/5">
               {activities.length > 0 ? (
                 activities.map((act) => {
+                  const isNewInSession = newActivityIds.has(act.id);
                   return (
                     <Link
                       key={act.id}
                       href={act.link}
-                      className="p-4 block hover:bg-[#FCFAF5] transition-colors text-xs relative"
+                      className={`p-4 block hover:bg-[#FCFAF5] transition-colors text-xs relative ${
+                        isNewInSession ? 'bg-amber-50/40' : ''
+                      }`}
                     >
+                      {isNewInSession && (
+                        <div className="absolute top-3 right-3 flex items-center gap-1 text-[10px] font-bold text-[#D4A72C] bg-[#D4A72C]/10 px-1.5 py-0.5 rounded-xs">
+                          <Sparkles className="w-3 h-3" />
+                          <span>NEW LIVE</span>
+                        </div>
+                      )}
+
                       <div className="flex items-start gap-3">
                         <div className={`w-8 h-8 rounded-xs flex items-center justify-center shrink-0 ${
                           act.type === 'quote' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'
@@ -448,14 +608,14 @@ export default function AdminDashboardPage() {
               ) : (
                 <div className="p-12 text-center text-xs text-black/40 space-y-2">
                   <Clock className="w-6 h-6 text-black/20 mx-auto" />
-                  <p>{loading ? 'Loading activity log...' : 'No activities recorded yet. Submitted quotes and messages will appear here.'}</p>
+                  <p>{loading ? 'Connecting to live feed...' : 'No activities yet. Real customer quotes and messages will appear here live.'}</p>
                 </div>
               )}
             </div>
           </div>
 
           <div className="p-3 bg-[#FCFAF5] border-t border-black/5 flex items-center justify-between text-xs text-black/60">
-            <span className="text-[11px]">Persistent Records • Auto-saved</span>
+            <span className="text-[11px]">Real-time live monitoring active</span>
             <div className="flex items-center gap-3">
               <Link href="/admin/quotes" className="text-[#123D2A] hover:text-[#D4A72C] font-medium">
                 Quotes →
