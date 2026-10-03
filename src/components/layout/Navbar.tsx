@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { companyConfig } from '@/data/companyConfig';
-import { Menu, X, ArrowUpRight, MessageSquare, Mail } from 'lucide-react';
+import { Menu, X, Phone, ArrowUpRight, Sparkles, Radio } from 'lucide-react';
 
 interface NavbarProps {
   onOpenQuoteModal?: () => void;
@@ -19,263 +19,233 @@ export default function Navbar({ onOpenQuoteModal }: NavbarProps) {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 40);
+      setIsScrolled(window.scrollY > 25);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close mobile menu on page change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Prevent background scroll when mobile drawer is open
   useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : 'unset';
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, [mobileMenuOpen]);
 
-  // Close on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMobileMenuOpen(false);
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'About', href: '/#about' },
-    { name: 'Our Rice', href: '/#products' },
-    { name: 'Milling Services', href: '/#services' },
-    { name: 'Wholesale', href: '/#wholesale' },
-    { name: 'Contact', href: '/#contact' },
+    { name: 'Heritage', href: '#about', num: '01' },
+    { name: 'Milling Engine', href: '#services', num: '02' },
+    { name: 'Grain Atelier', href: '#atelier', num: '03' },
+    { name: 'Specifications', href: '#quality', num: '04' },
+    { name: 'Contact', href: '#contact', num: '05' },
   ];
 
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled
-            ? 'bg-[#123D2A]/95 backdrop-blur-md py-2.5 sm:py-3 shadow-lg border-b border-[#D4A72C]/15'
-            : 'bg-gradient-to-b from-[#0B2519]/90 via-[#0B2519]/50 to-transparent py-3 sm:py-5'
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out px-3 sm:px-6 lg:px-8 ${
+          isScrolled ? 'pt-3' : 'pt-5 sm:pt-6'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between gap-2">
-          {/* Brand Logo & Editorial Title */}
-          <Link href="/" className="group flex items-center gap-2.5 sm:gap-3.5 focus:outline-none min-w-0 shrink">
-            <div className="relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-full overflow-hidden border-2 sm:border-3 border-[#D4A72C] bg-white shadow-2xl shrink-0 p-0.5 group-hover:scale-105 transition-transform ring-2 ring-[#D4A72C]/30">
+        <div
+          className={`max-w-7xl mx-auto rounded-full transition-all duration-500 px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between border ${
+            isScrolled
+              ? 'bg-fir-dark/95 backdrop-blur-xl border-sulu/30 shadow-2xl ring-1 ring-white/5'
+              : 'bg-fir/80 backdrop-blur-md border-white/10 shadow-lg'
+          }`}
+        >
+          {/* Brand Monogram & Corporate Title */}
+          <Link
+            href="/"
+            className="group flex items-center gap-3 focus:outline-none shrink-0"
+            aria-label="Ahero Top Grade Rice Millers"
+          >
+            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-sulu/80 bg-white p-0.5 shadow-lg group-hover:scale-105 transition-transform shrink-0">
               <Image
-                src="/logo.jpg"
-                alt="Top Grade Rice Millers Logo"
+                src="/logo.png"
+                alt="Ahero Top Grade Rice Millers"
                 fill
                 priority
-                className="object-cover"
+                sizes="(max-width: 640px) 56px, 64px"
+                className="object-contain"
               />
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-serif text-base sm:text-2xl md:text-3xl font-bold tracking-tight text-[#F8F6EF] leading-tight group-hover:text-[#D4A72C] transition-colors whitespace-nowrap">
-                Top Grade
-              </span>
-              <span className="text-[9px] xs:text-[10px] sm:text-xs uppercase tracking-wider text-[#D4A72C] font-sans font-semibold mt-0.5 truncate">
-                Home of Pure Pishori
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="font-serif text-base sm:text-lg font-bold tracking-tight text-white group-hover:text-sulu transition-colors leading-none">
+                  AHERO
+                </span>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-sulu font-bold">
+                  ATG
+                </span>
+              </div>
+              <span className="text-[9px] uppercase tracking-[0.22em] text-white/60 font-sans font-medium mt-0.5">
+                Top Grade Millers
               </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center space-x-7 shrink-0">
+          {/* Live Mill Facility Status Pill (Architectural Telemetry) */}
+          <div className="hidden xl:flex items-center gap-2 bg-black/40 border border-sulu/30 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider text-white/90">
+            <span className="w-2 h-2 rounded-full bg-acid-mint animate-ping" />
+            <span className="text-sulu font-semibold">Ahero Facility:</span>
+            <span>Intake & Milling Active</span>
+          </div>
+
+          {/* Desktop Architectural Navigation Links */}
+          <nav className="hidden lg:flex items-center space-x-7">
             {navLinks.map((link) => (
-              <Link
+              <a
                 key={link.name}
                 href={link.href}
-                className="relative text-sm font-medium tracking-wide text-[#F8F6EF]/90 hover:text-[#D4A72C] transition-colors duration-200 group py-1"
+                className="relative text-xs font-medium tracking-wide text-white/85 hover:text-sulu transition-colors duration-200 group py-1 flex items-center gap-1.5"
               >
-                {link.name}
-                <span className="absolute bottom-0 left-0 w-0 h-[1.5px] bg-[#D4A72C] transition-all duration-300 group-hover:w-full" />
-              </Link>
+                <span className="text-[9px] font-mono text-sulu/60 group-hover:text-sulu transition-colors">
+                  {link.num}
+                </span>
+                <span>{link.name}</span>
+                <span className="absolute bottom-0 left-0 w-0 h-[1.5px] bg-sulu transition-all duration-300 ease-out group-hover:w-full" />
+              </a>
             ))}
           </nav>
 
-          {/* Right Action & WhatsApp quick link */}
-          <div className="hidden lg:flex items-center space-x-4 shrink-0">
+          {/* Right Action Cluster: Quote Generator & Telephone Direct */}
+          <div className="hidden md:flex items-center space-x-3 shrink-0">
             <a
-              href={companyConfig.getWhatsAppLink('general')}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Direct WhatsApp Contact"
-              className="text-xs font-sans text-[#F8F6EF]/80 hover:text-[#D4A72C] flex items-center gap-1.5 transition-colors border border-white/10 rounded-sm px-2.5 py-1.5 hover:border-[#D4A72C]/40 min-h-[38px]"
+              href={`tel:${companyConfig.contact.phoneDisplay}`}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/85 hover:text-sulu px-3 py-2 rounded-full border border-white/10 hover:border-sulu/50 transition-all cursor-pointer"
             >
-              <MessageSquare className="w-3.5 h-3.5 text-[#25D366]" />
-              <span>WhatsApp</span>
+              <Phone className="w-3.5 h-3.5 text-sulu" />
+              <span className="hidden sm:inline font-mono text-[11px]">{companyConfig.contact.phoneDisplay}</span>
             </a>
 
-            {onOpenQuoteModal ? (
+            {onOpenQuoteModal && (
               <button
+                type="button"
                 onClick={onOpenQuoteModal}
-                className="inline-flex items-center gap-2 bg-[#D4A72C] hover:bg-[#E5BC4A] text-[#123D2A] px-4 py-2 rounded-sm text-xs font-semibold tracking-wider uppercase transition-all duration-200 shadow-sm hover:shadow active:scale-[0.99] min-h-[38px] cursor-pointer"
+                className="inline-flex items-center gap-2 bg-sulu hover:bg-sulu-light text-fir px-5 py-2 rounded-full text-xs font-bold tracking-wider uppercase transition-all duration-200 shadow-md active:scale-95 cursor-pointer"
               >
-                <span>Request a Quote</span>
+                <span>Request Quote</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
               </button>
-            ) : (
-              <Link
-                href="/#wholesale"
-                className="inline-flex items-center gap-2 bg-[#D4A72C] hover:bg-[#E5BC4A] text-[#123D2A] px-4 py-2 rounded-sm text-xs font-semibold tracking-wider uppercase transition-all duration-200 shadow-sm hover:shadow active:scale-[0.99] min-h-[38px]"
-              >
-                <span>Request a Quote</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </Link>
             )}
           </div>
 
-          {/* Mobile Actions: Touch-friendly Quote & Hamburger Trigger */}
+          {/* Mobile Actions: Touch Call & Hamburger */}
           <div className="flex items-center lg:hidden space-x-2 shrink-0">
             {onOpenQuoteModal && (
               <button
+                type="button"
                 onClick={onOpenQuoteModal}
-                className="min-h-[44px] min-w-[44px] px-3 py-2 bg-[#D4A72C] text-[#123D2A] rounded-sm text-[11px] font-bold tracking-wide uppercase active:scale-95 transition-transform flex items-center justify-center cursor-pointer shadow-sm"
-                aria-label="Request a Quote"
+                className="px-3.5 py-1.5 bg-sulu text-fir rounded-full text-[11px] font-bold uppercase tracking-wide active:scale-95 transition-transform shadow-xs"
               >
                 Quote
               </button>
             )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-              className="min-w-[44px] min-h-[44px] p-2.5 text-[#F8F6EF] hover:text-[#D4A72C] focus:outline-none rounded-sm bg-white/10 hover:bg-white/15 border border-white/15 flex items-center justify-center cursor-pointer transition-colors"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              className="p-2 text-white hover:text-sulu rounded-full bg-white/10 border border-white/15 flex items-center justify-center cursor-pointer transition-colors"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Drawer Navigation with Framer Motion & Safe Area */}
+      {/* Full-Height Architectural Command Overlay on Mobile */}
       <AnimatePresence>
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="fixed inset-0 bg-black/70 backdrop-blur-sm"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-
-            {/* Slide-in Drawer */}
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="fixed top-0 right-0 bottom-0 w-[85%] max-w-sm bg-[#123D2A] text-[#F8F6EF] p-5 sm:p-6 pt-safe flex flex-col justify-between shadow-2xl border-l border-[#D4A72C]/30 z-10 overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="space-y-6 pt-2">
-                {/* Drawer Header with Close Button */}
-                <div className="border-b border-white/10 pb-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#D4A72C] bg-white shadow-lg shrink-0">
-                      <Image
-                        src="/logo.jpg"
-                        alt="Top Grade Rice Millers Logo"
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="font-serif text-base font-bold tracking-tight text-[#F8F6EF] block leading-tight whitespace-nowrap">
-                        Top Grade
-                      </span>
-                      <p className="text-[10px] uppercase tracking-wider text-[#D4A72C] font-semibold mt-0.5 truncate">
-                        Home of Pure Pishori
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setMobileMenuOpen(false)}
-                    aria-label="Close menu"
-                    className="min-w-[40px] min-h-[40px] rounded-sm bg-white/10 text-white hover:text-[#D4A72C] flex items-center justify-center shrink-0 cursor-pointer ml-2"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[60] lg:hidden bg-fir-dark/98 backdrop-blur-2xl flex flex-col justify-between p-6 pt-safe pb-safe"
+          >
+            {/* Top Bar inside Drawer */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="relative w-10 h-10 rounded-full overflow-hidden border border-sulu bg-white p-0.5">
+                  <Image
+                    src="/logo.png"
+                    alt="Ahero Top Grade Rice Millers"
+                    fill
+                    sizes="40px"
+                    className="object-contain"
+                  />
                 </div>
-
-                {/* Nav Links */}
-                <nav className="space-y-1">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.name}
-                      href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block text-base font-medium py-3 px-2 border-b border-white/5 text-[#F8F6EF] hover:text-[#D4A72C] hover:bg-white/5 rounded-xs transition-colors"
-                    >
-                      {link.name}
-                    </Link>
-                  ))}
-                </nav>
-              </div>
-
-              {/* Bottom Actions */}
-              <div className="space-y-3 pt-6 pb-safe border-t border-white/10">
-                {onOpenQuoteModal ? (
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      onOpenQuoteModal();
-                    }}
-                    className="w-full min-h-[44px] flex items-center justify-center gap-2 bg-[#D4A72C] hover:bg-[#E5BC4A] text-[#123D2A] py-3 rounded-xs font-bold text-xs tracking-wider uppercase cursor-pointer transition-colors shadow-md"
-                  >
-                    <span>Request a Quote</span>
-                    <ArrowUpRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <Link
-                    href="/#wholesale"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full min-h-[44px] flex items-center justify-center gap-2 bg-[#D4A72C] hover:bg-[#E5BC4A] text-[#123D2A] py-3 rounded-xs font-bold text-xs tracking-wider uppercase transition-colors shadow-md"
-                  >
-                    <span>Request a Quote</span>
-                    <ArrowUpRight className="w-4 h-4" />
-                  </Link>
-                )}
-
-                <a
-                  href={companyConfig.getWhatsAppLink('general')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full min-h-[44px] flex items-center justify-center gap-2 border border-white/20 bg-white/5 hover:bg-white/10 text-[#F8F6EF] py-3 rounded-xs text-xs font-semibold hover:border-[#25D366] transition-colors"
-                >
-                  <MessageSquare className="w-4 h-4 text-[#25D366]" />
-                  <span>Chat on WhatsApp</span>
-                </a>
-
-                <a
-                  href={`mailto:${companyConfig.contact.email}?subject=${encodeURIComponent('Enquiry — Top Grade Rice Millers')}`}
-                  className="w-full min-h-[44px] flex items-center justify-center gap-2 border border-white/20 bg-white/5 hover:bg-white/10 text-[#F8F6EF] py-3 rounded-xs text-xs font-semibold hover:border-[#D4A72C] transition-colors"
-                >
-                  <Mail className="w-4 h-4 text-[#D4A72C]" />
-                  <span className="truncate">Email: {companyConfig.contact.email}</span>
-                </a>
-
-                <div className="text-center text-[11px] text-white/50 pt-1">
-                  Wang&apos;uru, Mwea · Kirinyaga County, Kenya
+                <div>
+                  <span className="font-serif text-base font-bold text-white block">
+                    Ahero Top Grade
+                  </span>
+                  <span className="text-[10px] uppercase font-mono text-sulu tracking-wider">
+                    Commercial Millers
+                  </span>
                 </div>
               </div>
-            </motion.div>
-          </div>
+
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 text-white hover:text-sulu rounded-full bg-white/10 border border-white/15"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Menu Navigation */}
+            <nav className="my-auto py-6 space-y-3">
+              {navLinks.map((link, idx) => (
+                <motion.div
+                  key={link.name}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: idx * 0.06 }}
+                >
+                  <a
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between py-3 border-b border-white/5 text-white hover:text-sulu transition-colors"
+                  >
+                    <span className="font-serif text-2xl font-medium">{link.name}</span>
+                    <span className="font-mono text-xs text-sulu/70">{link.num}</span>
+                  </a>
+                </motion.div>
+              ))}
+            </nav>
+
+            {/* Bottom Actions */}
+            <div className="space-y-3 pt-4 border-t border-white/10">
+              <a
+                href={`tel:${companyConfig.contact.phoneDisplay}`}
+                className="w-full flex items-center justify-center gap-2 bg-sulu text-fir py-3.5 rounded-full font-bold text-xs uppercase tracking-wider transition-colors shadow-md"
+              >
+                <Phone className="w-4 h-4" />
+                <span>Call Dispatch: {companyConfig.contact.phoneDisplay}</span>
+              </a>
+
+              {onOpenQuoteModal && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenQuoteModal();
+                  }}
+                  className="w-full flex items-center justify-center gap-2 border border-sulu/40 bg-white/5 text-white py-3 rounded-full font-medium text-xs uppercase tracking-wider"
+                >
+                  <span>Launch Quote Configurator</span>
+                  <ArrowUpRight className="w-4 h-4 text-sulu" />
+                </button>
+              )}
+
+              <div className="text-center text-[10px] font-mono text-white/40 pt-1">
+                Ahero, Kisumu County, Kenya · 0721306332
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

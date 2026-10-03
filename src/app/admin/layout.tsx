@@ -320,7 +320,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Branding with Official Logo */}
             <div className="px-2 pt-1 pb-3 border-b border-black/5">
               <Link href="/admin" className="flex items-center gap-2.5 group">
-                <div className="relative w-10 h-10 rounded-full overflow-hidden border border-[#D4A72C] bg-white shrink-0 shadow-2xs">
+                <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-[#D4A72C] bg-white shrink-0 shadow-xs">
                   <Image
                     src="/logo.jpg"
                     alt="Top Grade Logo"
