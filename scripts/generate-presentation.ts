@@ -18,9 +18,9 @@ async function main() {
   console.log('Byte Size:', pdfBytes.length, 'bytes');
 
   // Output paths
-  const publicPath = path.resolve(process.cwd(), 'public', 'Ahero-Top-Grade-Rice-Millers-Platform-Presentation.pdf');
-  const brainDir = 'C:\\Users\\ADMIN\\.gemini\\antigravity\\brain\\ef6c00ac-e028-4981-9ee4-fbbc9c73e6dd';
-  const brainPath = path.resolve(brainDir, 'Ahero-Top-Grade-Rice-Millers-Platform-Presentation.pdf');
+  const publicPath = path.resolve(process.cwd(), 'public', 'Top-Grade-Rice-Millers-Mwea-Platform-Presentation.pdf');
+  const brainDir = 'C:\\Users\\ADMIN\\.gemini\antigravity\\brain\\ef6c00ac-e028-4981-9ee4-fbbc9c73e6dd';
+  const brainPath = path.resolve(brainDir, 'Top-Grade-Rice-Millers-Mwea-Platform-Presentation.pdf');
 
   fs.writeFileSync(publicPath, Buffer.from(pdfBytes));
   console.log('Saved to public directory:', publicPath);

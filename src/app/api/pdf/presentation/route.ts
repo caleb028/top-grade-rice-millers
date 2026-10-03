@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   try {
     const company = await getCompanyData();
     const pdfBytes = await generateSitePresentationPdf(company);
-    const filename = 'Ahero-Top-Grade-Rice-Millers-Platform-Presentation.pdf';
+    const filename = 'Top-Grade-Rice-Millers-Mwea-Platform-Presentation.pdf';
 
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,

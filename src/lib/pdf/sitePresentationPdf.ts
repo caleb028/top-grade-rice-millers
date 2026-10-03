@@ -14,7 +14,7 @@ import { CompanyInfo } from '@/types';
 const REPO_URL = 'https://github.com/caleb028/top-grade-rice-millers';
 const REPO_DISPLAY = 'github.com/caleb028/top-grade-rice-millers';
 
-// Helper to draw the header for Page 1 with the THRICE LARGER LOGO (132 points vs original 44 points)
+// Helper to draw the header for Page 1 with the ORIGINAL TOP GRADE LOGO (scaled 3x larger: 132 points)
 async function drawCoverHeaderPage1(
   pdfDoc: PDFDocument,
   page: PDFPage,
@@ -30,8 +30,8 @@ async function drawCoverHeaderPage1(
   const logoX = PDF_MARGIN_LEFT;
   const logoY = topY - logoSize;
 
-  const pngPath = path.join(process.cwd(), 'public', 'logo.png');
   const jpgPath = path.join(process.cwd(), 'public', 'logo.jpg');
+  const altJpgPath = path.join(process.cwd(), 'public', 'logo-alt.jpg');
 
   // Decorative border/frame around the 3x large official logo
   page.drawRectangle({
@@ -44,7 +44,6 @@ async function drawCoverHeaderPage1(
     borderWidth: 1.5,
   });
 
-  // Inner subtle background
   page.drawRectangle({
     x: logoX - 1,
     y: logoY - 1,
@@ -53,10 +52,10 @@ async function drawCoverHeaderPage1(
     color: pdfColors.warmRice,
   });
 
-  if (fs.existsSync(pngPath)) {
+  if (fs.existsSync(jpgPath)) {
     try {
-      const logoBytes = fs.readFileSync(pngPath);
-      const logoImage = await pdfDoc.embedPng(logoBytes);
+      const logoBytes = fs.readFileSync(jpgPath);
+      const logoImage = await pdfDoc.embedJpg(logoBytes);
       page.drawImage(logoImage, {
         x: logoX,
         y: logoY,
@@ -66,9 +65,9 @@ async function drawCoverHeaderPage1(
     } catch {
       // fallback
     }
-  } else if (fs.existsSync(jpgPath)) {
+  } else if (fs.existsSync(altJpgPath)) {
     try {
-      const logoBytes = fs.readFileSync(jpgPath);
+      const logoBytes = fs.readFileSync(altJpgPath);
       const logoImage = await pdfDoc.embedJpg(logoBytes);
       page.drawImage(logoImage, {
         x: logoX,
@@ -86,7 +85,7 @@ async function drawCoverHeaderPage1(
   const rightX = PDF_PAGE_WIDTH - 45;
 
   // Company Brand Name
-  page.drawText((company.name || 'AHERO TOP GRADE RICE MILLERS').toUpperCase(), {
+  page.drawText((company.name || 'TOP GRADE RICE MILLERS').toUpperCase(), {
     x: textStartX,
     y: topY - 16,
     size: 14,
@@ -95,10 +94,10 @@ async function drawCoverHeaderPage1(
   });
 
   // Corporate Subtitle
-  page.drawText('Commercial Web Platform & Real-Time Operations System', {
+  page.drawText(company.slogan || 'Home of Pure Pishori', {
     x: textStartX,
     y: topY - 32,
-    size: 9.5,
+    size: 10,
     font: boldFont,
     color: pdfColors.charcoal,
   });
@@ -116,7 +115,6 @@ async function drawCoverHeaderPage1(
     borderWidth: 0.8,
   });
 
-  // Gold indicator tag inside repo box
   page.drawRectangle({
     x: textStartX,
     y: repoBoxY,
@@ -133,8 +131,8 @@ async function drawCoverHeaderPage1(
     color: pdfColors.forestGreen,
   });
 
-  // Facility Location
-  page.drawText('Facility: Ahero Industrial Milling Complex · Kisumu County, Kenya', {
+  // Mwea, Kirinyaga County Location
+  page.drawText('Facility: Wang\'uru / Mwea Rice Milling Hub · Kirinyaga County, Kenya', {
     x: textStartX,
     y: topY - 72,
     size: 7.5,
@@ -143,7 +141,7 @@ async function drawCoverHeaderPage1(
   });
 
   // Official Contact Points
-  const contactText = `Tel: ${company.contact?.phoneDisplay || '0721306332'}   •   Email: ${company.contact?.email || 'aherotopgradericemillers@gmail.com'}`;
+  const contactText = `Tel: ${company.contact?.phoneDisplay || '+254 722 251 484'}   •   Email: ${company.contact?.email || 'topgradericemillers009@gmail.com'}`;
   page.drawText(contactText, {
     x: textStartX,
     y: topY - 86,
@@ -153,7 +151,7 @@ async function drawCoverHeaderPage1(
   });
 
   // Document Metadata Row
-  page.drawText(`Ref: ATG-WEB-PRES-2026   |   Date: ${dateFormatted}   |   Branch: main`, {
+  page.drawText(`Ref: TGM-WEB-PRES-2026   |   Date: ${dateFormatted}   |   Branch: main`, {
     x: textStartX,
     y: topY - 100,
     size: 7.5,
@@ -189,7 +187,7 @@ async function drawCoverHeaderPage1(
 
   // Section 1 title banner
   const titleY = dividerY - 20;
-  page.drawText('PART I: EXECUTIVE OVERVIEW, REPOSITORY SCOPE & CUSTOMER EXPERIENCE', {
+  page.drawText('PART I: EXECUTIVE OVERVIEW, MWEA HERITAGE & DIGITAL PORTAL', {
     x: PDF_MARGIN_LEFT,
     y: titleY,
     size: 10,
@@ -210,7 +208,7 @@ async function drawCoverHeaderPage1(
   return titleY - 14;
 }
 
-// Helper to draw headers for Pages 2 and 3 with prominent 66pt running logo (1.5x larger than original 44pt)
+// Helper to draw headers for Pages 2 and 3 with prominent 66pt running logo
 async function drawRunningHeader(
   pdfDoc: PDFDocument,
   page: PDFPage,
@@ -223,13 +221,13 @@ async function drawRunningHeader(
   dateFormatted: string
 ): Promise<number> {
   const topY = PDF_PAGE_HEIGHT - PDF_MARGIN_TOP;
-  const logoSize = 66; // Prominent running logo (1.5x larger than 44pt)
-  const pngPath = path.join(process.cwd(), 'public', 'logo.png');
+  const logoSize = 66; // Prominent running logo
+  const jpgPath = path.join(process.cwd(), 'public', 'logo.jpg');
 
-  if (fs.existsSync(pngPath)) {
+  if (fs.existsSync(jpgPath)) {
     try {
-      const logoBytes = fs.readFileSync(pngPath);
-      const logoImage = await pdfDoc.embedPng(logoBytes);
+      const logoBytes = fs.readFileSync(jpgPath);
+      const logoImage = await pdfDoc.embedJpg(logoBytes);
       page.drawImage(logoImage, {
         x: PDF_MARGIN_LEFT,
         y: topY - logoSize,
@@ -244,7 +242,7 @@ async function drawRunningHeader(
   const textStartX = PDF_MARGIN_LEFT + logoSize + 14;
   const rightX = PDF_PAGE_WIDTH - 45;
 
-  page.drawText((company.name || 'AHERO TOP GRADE RICE MILLERS').toUpperCase(), {
+  page.drawText((company.name || 'TOP GRADE RICE MILLERS').toUpperCase(), {
     x: textStartX,
     y: topY - 12,
     size: 11,
@@ -252,7 +250,7 @@ async function drawRunningHeader(
     color: pdfColors.forestGreen,
   });
 
-  page.drawText(`Repository: ${REPO_DISPLAY} (Branch: main)`, {
+  page.drawText(`Home of Pure Pishori · Mwea, Kirinyaga County, Kenya`, {
     x: textStartX,
     y: topY - 24,
     size: 8,
@@ -260,7 +258,7 @@ async function drawRunningHeader(
     color: pdfColors.charcoal,
   });
 
-  page.drawText('Official Agribusiness Platform Presentation • Ahero, Kisumu County, Kenya', {
+  page.drawText(`Repository: ${REPO_DISPLAY} (Branch: main)`, {
     x: textStartX,
     y: topY - 35,
     size: 7.2,
@@ -269,7 +267,7 @@ async function drawRunningHeader(
   });
 
   // Right-aligned metadata
-  const docRef = 'Ref: ATG-WEB-PRES-2026';
+  const docRef = 'Ref: TGM-WEB-PRES-2026';
   const rw1 = boldFont.widthOfTextAtSize(docRef, 7.5);
   page.drawText(docRef, {
     x: rightX - rw1,
@@ -337,7 +335,7 @@ async function drawRunningHeader(
   return titleY - 14;
 }
 
-// Presentation footer with repository citation
+// Presentation footer with Mwea identity
 function drawPresentationFooter(
   page: PDFPage,
   pageIndex: number,
@@ -355,7 +353,7 @@ function drawPresentationFooter(
     color: pdfColors.tableBorder,
   });
 
-  const leftText = `${company.name || 'Ahero Top Grade Rice Millers'} • Repo: ${REPO_DISPLAY} • Official Corporate Presentation`;
+  const leftText = `Top Grade Rice Millers • Home of Pure Pishori • Mwea, Kirinyaga County • Repo: ${REPO_DISPLAY}`;
   page.drawText(leftText, {
     x: PDF_MARGIN_LEFT,
     y: footerY + 2,
@@ -379,10 +377,10 @@ function drawPresentationFooter(
 export async function generateSitePresentationPdf(company: CompanyInfo): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
 
-  pdfDoc.setTitle('Ahero Top Grade Rice Millers — Digital Platform & Website Presentation');
+  pdfDoc.setTitle('Top Grade Rice Millers — Mwea Digital Platform Presentation');
   pdfDoc.setAuthor('Top Grade Rice Millers Agribusiness Digital Team');
-  pdfDoc.setSubject(`Executive Brief for ${REPO_URL}`);
-  pdfDoc.setCreator('Ahero Top Grade Rice Millers Digital Platform Engine');
+  pdfDoc.setSubject(`Executive Brief for ${REPO_URL} — Home of Pure Pishori, Mwea`);
+  pdfDoc.setCreator('Top Grade Rice Millers Digital Platform Engine');
 
   const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -397,8 +395,8 @@ export async function generateSitePresentationPdf(company: CompanyInfo): Promise
   const totalPages = 3;
 
   // =========================================================================
-  // PAGE 1: EXECUTIVE VISION, STRATEGIC PILLARS & PUBLIC CONSUMER EXPERIENCE
-  // (Features the THRICE LARGER 132pt Logo & GitHub Repository Details)
+  // PAGE 1: EXECUTIVE VISION, STRATEGIC PILLARS & MWEA CUSTOMER EXPERIENCE
+  // (Features the ORIGINAL TOP GRADE LOGO scaled 3x to 132 points)
   // =========================================================================
   const page1 = pdfDoc.addPage([PDF_PAGE_WIDTH, PDF_PAGE_HEIGHT]);
   let y1 = await drawCoverHeaderPage1(
@@ -446,7 +444,7 @@ export async function generateSitePresentationPdf(company: CompanyInfo): Promise
   });
 
   page1.drawText(
-    'A high-performance digital gateway designed to capture wholesale and retail demand 24/7, provide seamless commercial quotations, guarantee verified batch traceability, and streamline administrative dispatch operations.',
+    'Milled in the heart of Mwea, Kirinyaga County: A high-performance commercial gateway engineered to capture wholesale and retail demand 24/7, provide seamless quotations, guarantee verified batch traceability, and streamline mill dispatch operations.',
     {
       x: PDF_MARGIN_LEFT + 14,
       y: bannerY + 7,
@@ -480,7 +478,7 @@ export async function generateSitePresentationPdf(company: CompanyInfo): Promise
     },
     {
       title: 'B. Direct Brand Trust & Authority',
-      desc: 'Showcases Ahero’s milling heritage, high grain recovery rates, calibrated destoning machinery, and commitment to 100% stone-free table rice.',
+      desc: 'Showcases Mwea’s volcanic soil heritage, high grain recovery rates, calibrated destoning machinery, and commitment to 100% stone-free Pure Pishori.',
     },
     {
       title: 'C. Zero-Loss Operations & CRM',
@@ -538,7 +536,7 @@ export async function generateSitePresentationPdf(company: CompanyInfo): Promise
   y1 = y1 - 2 * cardHeight - 1 * 6 - 14;
 
   // 3. Public Customer-Facing Portal Architecture
-  page1.drawText('2. PUBLIC PORTAL MODULES & USER EXPERIENCE', {
+  page1.drawText('2. PUBLIC PORTAL MODULES & MWEA USER EXPERIENCE', {
     x: PDF_MARGIN_LEFT,
     y: y1,
     size: 9,
@@ -549,16 +547,16 @@ export async function generateSitePresentationPdf(company: CompanyInfo): Promise
 
   const publicModules = [
     {
-      name: 'Dynamic Hero & Value Proposition',
-      desc: 'Engaging visual presentation highlighting "Home of Pure Pishori" and reliable Ahero processing with interactive metric counters and quick-action navigation.',
+      name: 'Dynamic Hero & Pure Pishori Heritage',
+      desc: 'Engaging visual presentation highlighting "Home of Pure Pishori" milled in Mwea, Kirinyaga County with interactive operational counters.',
     },
     {
-      name: 'Product Catalog & PDF Specs',
-      desc: 'Comprehensive showcase of Milled Rice, Broken Rice, Rice Bran, and Husks with technical grain metrics, bag packaging sizes, and instant downloadable PDF brochures.',
+      name: 'Curated Product Catalog & PDF Specs',
+      desc: 'Showcase of Mwea Pure Pishori (Grade 1), Classic Super Long Grain, and Fragrant Broken Rice with downloadable branded PDF brochures.',
     },
     {
       name: 'Industrial Milling Services',
-      desc: 'Detailed breakdown of commercial paddy intake, calibrated destoning, modern hulling, acoustic color sorting, custom packaging, and ex-mill bulk logistics.',
+      desc: 'Detailed breakdown of commercial paddy intake, calibrated destoning, modern hulling, optical color sorting, custom packaging, and ex-mill bulk logistics.',
     },
     {
       name: 'Farm-to-Table Batch Traceability',
@@ -566,7 +564,7 @@ export async function generateSitePresentationPdf(company: CompanyInfo): Promise
     },
     {
       name: 'Direct Multi-Channel Contact',
-      desc: `One-click clickable official email (${company.contact?.email || 'aherotopgradericemillers@gmail.com'}), direct WhatsApp ordering hotline, and embedded Google Maps.`,
+      desc: `Official email (${company.contact?.email || 'topgradericemillers009@gmail.com'}), direct WhatsApp ordering hotline (${company.contact?.phoneDisplay || '+254 722 251 484'}), and Wang'uru location.`,
     },
     {
       name: 'Mobile-Locked Viewport Architecture',
@@ -708,7 +706,7 @@ export async function generateSitePresentationPdf(company: CompanyInfo): Promise
     borderWidth: 0.8,
   });
 
-  page2.drawText('DUAL FULFILLMENT WORKFLOW: EX-MILL PICKUP & REGIONAL DELIVERY', {
+  page2.drawText('DUAL FULFILLMENT WORKFLOW: EX-MILL MWEA PICKUP & REGIONAL DELIVERY', {
     x: PDF_MARGIN_LEFT + 12,
     y: quoteBoxY + quoteBoxHeight - 16,
     size: 8.5,
@@ -717,8 +715,8 @@ export async function generateSitePresentationPdf(company: CompanyInfo): Promise
   });
 
   const quoteSteps = [
-    '• Direct Ex-Mill Depot Collection: Buyers can select pickup dates, vehicle registration details, and loading instructions.',
-    '• Regional Commercial Delivery: Custom dispatch calculations factoring county, town, and offloading location.',
+    '• Direct Ex-Mill Mwea Collection: Buyers can select pickup dates, vehicle registration details, and loading instructions.',
+    '• Regional Commercial Delivery: Custom dispatch calculations factoring county, town, and offloading location across Kenya.',
     '• Automated Reference Numbering: Generates unique, professional reference IDs (e.g., TG-QR-2026-9111) for instant tracking.',
     '• Wholesale & Retail Versatility: Accommodates both 100+ sack bulk commercial contracts and retail packaging orders.',
     '• Instant Administrator Notification: Customer requests immediately appear on the mill command center in real-time.',
@@ -1061,9 +1059,9 @@ export async function generateSitePresentationPdf(company: CompanyInfo): Promise
       desc: 'Reliable backend guarantees every customer quote and message is safely preserved until resolved.',
     },
     {
-      metric: 'Premium Market Presence',
-      label: 'Brand Equity Growth',
-      desc: 'Elevates Ahero Top Grade as a modern, trustworthy commercial miller in the East African rice trade.',
+      metric: 'Pure Mwea Brand Authority',
+      label: 'Authenticity & Equity Growth',
+      desc: 'Elevates Top Grade as the premier commercial rice miller in Mwea and throughout Kenya.',
     },
   ];
 
@@ -1142,9 +1140,9 @@ export async function generateSitePresentationPdf(company: CompanyInfo): Promise
 
   const signCols = [
     { title: 'Codebase Repo:', val: REPO_DISPLAY },
-    { title: 'Presented To:', val: 'Ahero Mill Executive Leadership' },
+    { title: 'Presented To:', val: 'TGM Executive Leadership' },
     { title: 'System Status:', val: 'Verified Live & Production Ready' },
-    { title: 'Official Email:', val: company.contact?.email || 'aherotopgradericemillers@gmail.com' },
+    { title: 'Official Email:', val: company.contact?.email || 'topgradericemillers009@gmail.com' },
   ];
 
   const colW = (PDF_CONTENT_WIDTH - 24) / 4;
