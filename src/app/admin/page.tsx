@@ -322,6 +322,17 @@ export default function AdminDashboardPage() {
             )}
           </button>
 
+          <a
+            href="/api/pdf/presentation"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123D2A] text-white border border-[#123D2A] text-xs font-medium rounded-xs hover:bg-[#184D35] transition-colors cursor-pointer"
+            title="Download Executive Platform Presentation PDF for company leadership"
+          >
+            <FileText className="w-3.5 h-3.5 text-[#D4A72C]" />
+            <span>Presentation PDF</span>
+          </a>
+
           <button
             type="button"
             onClick={() => fetchDashboardData(false)}
